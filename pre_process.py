@@ -102,7 +102,7 @@ def evaluate_model(model_file, test_gen):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR, "vqa")
 IMAGE_DIR = os.path.join(VQA_DIR, "mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_50.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -115,7 +115,7 @@ VECTORIZERS = ["InceptionV3"]
 MERGE_MODES = ["Dot"]
 scores = np.zeros((len(VECTORIZERS), len(MERGE_MODES)))
 
-logger.info("carregando vetores")
+logger.info("carregando triplas")
 image_triples = carregar_triplas(TRIPLES_FILE)
 logger.info("Pronto")
 
