@@ -85,7 +85,7 @@ def evaluate_model(model_file, test_gen):
     ytrue, ypred = [], []
     num_test_steps = len(test_triples) // BATCH_SIZE
     for i in range(num_test_steps):
-        (X1, X2), Y = test_gen.next()
+        (X1, X2), Y = test_gen.__next__()
         Y_ = model.predict([X1, X2])
         ytrue.extend(np.argmax(Y, axis=1).tolist())
         ypred.extend(np.argmax(Y_, axis=1).tolist())
@@ -102,7 +102,8 @@ def evaluate_model(model_file, test_gen):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR, "vqa")
 IMAGE_DIR = os.path.join(VQA_DIR, "mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_50.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_500.csv") 
+VALIDATION_TRIPLES_FILE = os.path.join(DATA_DIR, "triples_val_500.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -117,16 +118,16 @@ scores = np.zeros((len(VECTORIZERS), len(MERGE_MODES)))
 
 logger.info("carregando triplas")
 image_triples = carregar_triplas(TRIPLES_FILE)
+validation_triples = carregar_triplas(VALIDATION_TRIPLES_FILE)
 logger.info("Pronto")
 
 logger.info("Dividindo o dataset")
-train_triples, val_triples, test_triples = train_test_split(image_triples, 
-                                                            splits=[0.7, 0.1, 0.2])
+train_triples = image_triples
+val_triples, test_triples = train_test_split(validation_triples, splits=[0.9, 0.1])
 
-logger.info("pronto")
-logger.debug("train %d", len(train_triples))
-logger.debug("validation %d", len(val_triples))
-logger.debug("test %d", len(test_triples))
+logger.debug("Train size %d", len(train_triples))
+logger.debug("Validation size %d", len(val_triples))
+logger.debug("Test size %d", len(test_triples))
 
 VECTOR_SIZE = 2048
 VECTOR_FILE = os.path.join(DATA_DIR, "inception-vectors.tsv")
@@ -165,7 +166,7 @@ logger.info("compilando o modelo")
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 logger.info("pronto")
 
-best_model_name = get_model_file(DATA_DIR, "inceptionv3", "cat", "best")
+best_model_name = get_model_file(DATA_DIR, "inceptionv3", "dot", "best")
 logger.debug("model name : %s", best_model_name)
 
 csv_logger = CSVLogger(os.path.join("logs", 'training_epochs.csv'))
@@ -200,9 +201,9 @@ plt.plot(history.history["val_acc"], color="b", label="validation")
 plt.legend(loc="best")
 
 plt.savefig("graphs/best.png")
+plt.close()
 
-
-final_model_name = get_model_file(DATA_DIR, "inceptionv3", "cat", "final")
+final_model_name = get_model_file(DATA_DIR, "inceptionv3", "dot", "final")
 logger.info("salvando o modelo em %s", final_model_name)
 
 model.save(final_model_name)

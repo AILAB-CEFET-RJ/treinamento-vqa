@@ -1,5 +1,6 @@
 .vscode/
 logs/
 data/
+graphs/
 *.__pycache__
 *.pyc
