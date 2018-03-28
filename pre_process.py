@@ -184,7 +184,7 @@ logger.debug("passos de valicao por epoca %d",  len(val_triples) // BATCH_SIZE)
 history = model.fit_generator(train_gen, steps_per_epoch=train_steps_per_epoch, 
                               epochs=NUM_EPOCHS, 
                               validation_data=val_gen, validation_steps=val_steps_per_epoch,
-                              callbacks=callback_list, verbose=2)
+                              callbacks=callback_list)
 
 logger.info("gravando graficos de treinamento")
 
