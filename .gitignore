@@ -4,3 +4,4 @@ data/
 graphs/
 *.__pycache__
 *.pyc
+nohup.out

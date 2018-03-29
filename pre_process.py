@@ -12,6 +12,9 @@ import numpy as np
 import pandas as pd
 import os
 
+import matplotlib
+matplotlib.use('Agg')
+
 import logging
 
 #################################################################
@@ -102,12 +105,13 @@ def evaluate_model(model_file, test_gen):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR, "vqa")
 IMAGE_DIR = os.path.join(VQA_DIR, "mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_500.csv") 
-VALIDATION_TRIPLES_FILE = os.path.join(DATA_DIR, "triples_val_500.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
+VALIDATION_TRIPLES_FILE = os.path.join(DATA_DIR, "triples_val.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
+logger.debug("VAL_TRIPLES_FILE %s", VALIDATION_TRIPLES_FILE)
 
 BATCH_SIZE = 32
 NUM_EPOCHS = 10
@@ -123,7 +127,9 @@ logger.info("Pronto")
 
 logger.info("Dividindo o dataset")
 train_triples = image_triples
-val_triples, test_triples = train_test_split(validation_triples, splits=[0.9, 0.1])
+val_triples, test_triples = train_test_split(validation_triples, splits=[0.5, 0.5])
+
+#train_triples, val_triples, test_triples = train_test_split(image_triples, splits=[0.7, 0.1, 0.2])
 
 logger.debug("Train size %d", len(train_triples))
 logger.debug("Validation size %d", len(val_triples))
@@ -131,17 +137,18 @@ logger.debug("Test size %d", len(test_triples))
 
 VECTOR_SIZE = 2048
 VECTOR_FILE = os.path.join(DATA_DIR, "inception-vectors.tsv")
+VALIDATION_VECTOR_FILE = os.path.join(DATA_DIR, "inception-vectors-validation.tsv")
 logger.info("VECTOR_FILE %s", VECTOR_FILE)
 
 logger.info("Carregando vetores")
 vec_dict = carregar_vetores(VECTOR_FILE)
+validation_dict = carregar_vetores(VALIDATION_VECTOR_FILE)
 logger.info("pronto")
 
 logger.info("Entrada: Concatenando Vetores")
 train_gen = data_generator(train_triples, VECTOR_SIZE, vec_dict, BATCH_SIZE)
-val_gen = data_generator(val_triples, VECTOR_SIZE, vec_dict, BATCH_SIZE)
+val_gen = data_generator(val_triples, VECTOR_SIZE, validation_dict, BATCH_SIZE)
 logger.info("pronto")
-
 
 logger.info(" ####### Inicio do treinamento ######")
 
@@ -210,7 +217,6 @@ model.save(final_model_name)
 test_gen = data_generator(test_triples, VECTOR_SIZE, vec_dict, BATCH_SIZE)
 final_accuracy = evaluate_model(final_model_name, test_gen)
 logger.debug("final accuracy %s", final_accuracy)
-
 
 test_gen = data_generator(test_triples, VECTOR_SIZE, vec_dict, BATCH_SIZE)
 best_accuracy = evaluate_model(best_model_name, test_gen)
