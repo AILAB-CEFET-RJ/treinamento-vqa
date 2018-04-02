@@ -2,7 +2,7 @@ import os
 
 from keras import backend as K
 from keras.applications import inception_v3
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, CSVLogger
 from keras.layers import Input, merge
 from keras.layers.core import Activation, Dense, Dropout, Lambda
 from keras.models import Model, load_model
