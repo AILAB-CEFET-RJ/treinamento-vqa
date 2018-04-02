@@ -76,6 +76,23 @@ def cosine_distance(vecs, normalize=False):
 #################################################################
 def cosine_distance_output_shape(shapes):
     return shapes[0]
+#################################################################
+
+def evaluate_model(model):
+    ytest, ytest_ = [], []
+    test_pair_gen = pair_generator(triples_data_test, image_cache, None, BATCH_SIZE)
+    num_test_steps = len(triples_data_test) // BATCH_SIZE
+    curr_test_steps = 0
+    for [X1test, X2test], Ytest in test_pair_gen:
+        if curr_test_steps > num_test_steps:
+            break
+        Ytest_ = model.predict([X1test, X2test])
+        ytest.extend(np.argmax(Ytest, axis=1).tolist())
+        ytest_.extend(np.argmax(Ytest_, axis=1).tolist())
+        curr_test_steps += 1
+    acc = accuracy_score(ytest, ytest_)
+    cm = confusion_matrix(ytest, ytest_)
+    return acc, cm
 
 #################################################################
 #                     Inicio da Execucao                        #
@@ -142,12 +159,14 @@ for layer in siamese_head.layers:
 
 predicao = siamese_head([vector_1, vector_2])
 
+logger.debug("compilando o modelo")
 model = Model(inputs=[inception_1.input, inception_2.input], outputs=predicao)
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 
 #################################################################
 #                     Treinamento da Rede                       #
 #################################################################
+logger.info(" ####### Inicio do treinamento ######")
 
 # Parametrizacao da Rede
 BATCH_SIZE = 32
@@ -155,6 +174,85 @@ NUM_EPOCHS = 10
 BEST_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final.h5")
 
+logger.info("TAMANHO BATCH %s", BATCH_SIZE)
+logger.info("NUM DE EPOCAS %s", NUM_EPOCHS)
+logger.info("MELHOR MODELO %s", BEST_MODEL_FILE)
+logger.info("MODELO FINAL %s", FINAL_MODEL_FILE)
+
 # Quebrando o dataset em partes para o treinamento
+logger.info("Dividindo o dataset")
 triples_data_trainval, triples_data_test = train_test_split(triples_data, train_size=0.8)
 triples_data_train, triples_data_val = train_test_split(triples_data_trainval, train_size=0.9)
+
+logger.debug("DATA TRAIN %d", len(triples_data_trainval))
+logger.debug("DATA TEST %d", len(triples_data_test))
+logger.debug("DATA VAL TRAIN %d", len(triples_data_train))
+logger.debug("DATA VAL TEST %d", len(triples_data_val))
+
+logger.info("Entrada: Concatenando Vetores")
+datagen_args = dict(rotation_range=10,
+                    width_shift_range=0.2,
+                    height_shift_range=0.2,
+                    zoom_range=0.2)
+datagens = [ImageDataGenerator(**datagen_args),
+            ImageDataGenerator(**datagen_args)]
+train_pair_gen = pair_generator(triples_data_train, image_cache, datagens, BATCH_SIZE)
+val_pair_gen = pair_generator(triples_data_val, image_cache, None, BATCH_SIZE)
+logger.info("pronto")
+
+num_train_steps = len(triples_data_train) // BATCH_SIZE
+num_val_steps = len(triples_data_val) // BATCH_SIZE
+logger.debug("passos de treinamento por epoca %d", num_train_steps)
+logger.debug("passos de validacao por epoca %d",  num_val_steps)
+
+
+logger.info("Ajustando o modelo")
+csv_logger = CSVLogger(os.path.join("logs", 'training_epochs.csv'))
+checkpoint = ModelCheckpoint(filepath=BEST_MODEL_FILE, save_best_only=True)
+
+logger.debug("gravando dados das epocas em %s", os.path.join("logs", 'training_epochs.csv'))
+callback_list = [csv_logger, checkpoint]
+
+history = model.fit_generator(train_pair_gen, 
+                             steps_per_epoch=num_train_steps,
+                             epochs=NUM_EPOCHS,
+                             validation_data=val_pair_gen,
+                             validation_steps=num_val_steps,
+                             callbacks=callback_list)
+
+logger.info("gerando os graficos de treinamento")
+plt.subplot(211)
+plt.title("Accuracy")
+plt.plot(history.history["acc"], color="blue", label="train")
+plt.plot(history.history["val_acc"], color="red", label="validation")
+plt.legend(loc="best")
+
+plt.subplot(212)
+plt.title("Loss")
+plt.plot(history.history["loss"], color="blue", label="train")
+plt.plot(history.history["val_loss"], color="red", label="validation")
+plt.legend(loc="best")
+
+plt.tight_layout()
+plt.savefig("graphs/best.png")
+plt.close()
+
+logger.info("salvando o modelo final em %s", FINAL_MODEL_FILE)
+model.save(FINAL_MODEL_FILE, overwrite=True)
+
+
+logger.info("==== Avaliando Resultados: Modelo final sobre o conjunto de dados ====")
+final_model = load_model(FINAL_MODEL_FILE)
+acc, cm = evaluate_model(final_model)
+logger.info("Precisao: {:.3f}".format(acc))
+logger.info("Matriz de Confusao")
+logger.info(cm)
+
+logger.info("==== Avaliando Resultados: Melhor modelo sobre o conjunto de dados ====")
+best_model = load_model(BEST_MODEL_FILE)
+acc, cm = evaluate_model(best_model)
+logger.info("Precisao: {:.3f}".format(acc))
+logger.info("Matriz de Confusao")
+logger.info(cm)
+
+logger.info("Fim da execucao")

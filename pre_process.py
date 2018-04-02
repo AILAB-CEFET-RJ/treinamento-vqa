@@ -179,14 +179,14 @@ logger.debug("model name : %s", best_model_name)
 csv_logger = CSVLogger(os.path.join("logs", 'training_epochs.csv'))
 checkpoint = ModelCheckpoint(best_model_name, save_best_only=True)
 
-logger.debug("gravando dados das epocas em %s", os.path.join("logs", 'training_epochs.csv'))
+logger.debug("gravando dados das epocas em %s", os.path.join("logs", 'preprocess_epochs.csv'))
 callback_list = [csv_logger, checkpoint]
 
 train_steps_per_epoch = len(train_triples) // BATCH_SIZE
 val_steps_per_epoch = len(val_triples) // BATCH_SIZE
 
 logger.debug("passos de treinamento por epoca %d", len(train_triples) // BATCH_SIZE)
-logger.debug("passos de valicao por epoca %d",  len(val_triples) // BATCH_SIZE)
+logger.debug("passos de validacao por epoca %d",  len(val_triples) // BATCH_SIZE)
 
 history = model.fit_generator(train_gen, steps_per_epoch=train_steps_per_epoch, 
                               epochs=NUM_EPOCHS, 
