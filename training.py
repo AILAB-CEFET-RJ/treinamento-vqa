@@ -83,7 +83,7 @@ def cosine_distance_output_shape(shapes):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_50.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -98,7 +98,7 @@ image_cache = {}
 num_pairs = len(triples_data)
 
 for i, (image_filename_l, image_filename_r, _) in enumerate(triples_data):
-    if i % 1000 == 0:
+    if i % 10000 == 0:
         logger.info("images from {:d}/{:d} pairs loaded to cache".format(i, num_pairs))
     if image_filename_l not in image_cache:
         load_image_cache(image_cache, image_filename_l)
