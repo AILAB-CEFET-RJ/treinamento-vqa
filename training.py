@@ -100,7 +100,7 @@ def evaluate_model(model):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_500.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -172,7 +172,7 @@ logger.info(" ####### Inicio do treinamento ######")
 BATCH_SIZE = 32
 NUM_EPOCHS = 10
 BEST_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final-500.h5")
 
 logger.info("TAMANHO BATCH %s", BATCH_SIZE)
 logger.info("NUM DE EPOCAS %s", NUM_EPOCHS)
