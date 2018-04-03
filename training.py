@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 #################################################################
-#                           Métodos                             #
+#                           Metodos                             #
 #################################################################
 def carregar_triplas(lista_triplas):
     image_triples = pd.read_csv(lista_triplas, sep=",", header=0, names=["left","right","similar"])
@@ -131,7 +131,7 @@ datagen_args = dict(rotation_range=10,
 datagens = [ImageDataGenerator(**datagen_args),
             ImageDataGenerator(**datagen_args)]
 pair_gen = pair_generator(triples_data, image_cache, datagens, 32)
-[X1, X2], Y = pair_gen.__next__()
+[X1, X2], Y = pair_gen.next()
 
 vecs = [np.random.random((10,)), np.random.random((10,))]
 s = cosine_distance(vecs)
