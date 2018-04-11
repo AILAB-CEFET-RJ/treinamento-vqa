@@ -22,12 +22,15 @@ logger.addHandler(logging.StreamHandler())
 #################################################################
 #               Configurando logs de execucao                   #
 #################################################################
-def carregar_triplas(lista_triplas):
-    image_triples = pd.read_csv(lista_triplas, sep=",", header=0, names=["left","right","similar"])
-    return image_triples.values
+def carregar_pares(vqa_dir, imagenet_dir):
+    pairs = []
+    for vqa_file in os.listdir(vqa_dir):
+         for img_file in os.listdir(imagenet_dir):
+             pairs.append( [ vqa_file, img_file] )
+    return pairs
 #################################################################
-def load_image_cache(image_cache, image_filename):
-    image = plt.imread(os.path.join(IMAGE_DIR, image_filename))
+def load_image_cache(image_cache, image_filename, directory):
+    image = plt.imread(os.path.join(directory, image_filename))
     image = imresize(image, (299, 299))
     image = image.astype("float32")
     image = inception_v3.preprocess_input(image)
@@ -45,64 +48,69 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
             batch = [triples[i] for i in batch_indices]
             X1 = np.zeros((batch_size, 299, 299, 3))
             X2 = np.zeros((batch_size, 299, 299, 3))
-            Y = np.zeros((batch_size, 2))
-            for i, (image_filename_l, image_filename_r, label) in enumerate(batch):                
+            
+            for i, (image_filename_l, image_filename_r) in enumerate(batch):                
                 if datagens is None or len(datagens) == 0:
                     X1[i] = image_cache[image_filename_l]
                     X2[i] = image_cache[image_filename_r]
                 else:
                     X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
                     X2[i] = datagens[1].random_transform(image_cache[image_filename_r])
-                Y[i] = [1, 0] if label == 0 else [0, 1]
-            yield [X1, X2], Y
+            yield [X1, X2]
 ################################################################
 def predizer(model):    
+    
     ytest, ytest_ = [], []    
-    test_pair_gen = pair_generator(triples_data, image_cache, None, BATCH_SIZE)    
-    num_test_steps = len(triples_data) // BATCH_SIZE
+    test_pair_gen = pair_generator(pairs_data, image_cache, None, BATCH_SIZE)    
+    num_test_steps = len(pairs_data) // BATCH_SIZE
     curr_test_steps = 0
-    for [X1test, X2test], Ytest in test_pair_gen:
+    
+    logger.debug( "NUM STEPS : %d",  num_test_steps)
+
+    for [X1test, X2test] in test_pair_gen:
         if curr_test_steps > num_test_steps:
             break        
-        Ytest_ = model.predict([X1test, X2test])
-        ytest.extend(np.argmax(Ytest, axis=1).tolist())
+        Ytest_ = model.predict([X1test, X2test])        
         ytest_.extend(np.argmax(Ytest_, axis=1).tolist())
         curr_test_steps += 1
-    acc = accuracy_score(ytest, ytest_)
-    cm = confusion_matrix(ytest, ytest_)
-    return acc, cm, ytest
-    #return ytest
+    #acc = accuracy_score(ytest, ytest_)
+    #cm = confusion_matrix(ytest, ytest_)
+    #return acc, cm, ytest
+    return ytest_
 ################################################################
 
 
 DATA_DIR = os.environ["DATA_DIR"]
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final-500.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
-IMAGE_DIR = os.path.join(DATA_DIR,"imagenet_vqa")
-
+IMAGE_DIR = os.path.join(DATA_DIR,"predict")
+IMAGENET_DIR = os.path.join(IMAGE_DIR,"imagenet")
+VQA_DIR = os.path.join(IMAGE_DIR,"mscoco")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 
-triples_data = carregar_triplas(TRIPLES_FILE)
+pairs_data = carregar_pares(VQA_DIR, IMAGENET_DIR)
+num_pairs = len(pairs_data)
 
-logger.debug( "Numero de pares : %d",  len(triples_data))
+logger.debug( "Numero de pares : %d",  num_pairs)
 
 image_cache = {}
-num_pairs = len(triples_data)
+
 logger.debug( "carregando imagens")
 
-for i, (image_filename_l, image_filename_r, _) in enumerate(triples_data):    
+for i, (image_filename_l, image_filename_r) in enumerate(pairs_data):    
     if image_filename_l not in image_cache:
-        load_image_cache(image_cache, image_filename_l)
+        load_image_cache(image_cache, image_filename_l, VQA_DIR)
     if image_filename_r not in image_cache:
-        load_image_cache(image_cache, image_filename_r)
+        load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
 
 logger.info("imagens carregadas")
 
-test_pair_gen = pair_generator(triples_data, image_cache, None, None)
+test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
+
 
 logger.info("Carregando o modelo")
 model = load_model(FINAL_MODEL_FILE)
@@ -110,7 +118,14 @@ logger.info("Modelo carregado com sucesso")
 
 BATCH_SIZE = 5
 
-acc,cm, y = predizer(model)
-    
+#acc,cm, y = predizer(model)
+logger.info("Predizendo similaridades")
+predicoes = predizer(model)
+logger.info("Pronto")
+
+logger.info("Salvando as predicoes")
+df = pd.DataFrame(predicoes)
+df.to_csv(os.path.join(DATA_DIR, "predicoes.csv"))
+logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes.csv"))
 
 logger.info("Finalizado")
