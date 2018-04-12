@@ -100,7 +100,7 @@ def evaluate_model(model):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train_500.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -131,7 +131,7 @@ datagen_args = dict(rotation_range=10,
 datagens = [ImageDataGenerator(**datagen_args),
             ImageDataGenerator(**datagen_args)]
 pair_gen = pair_generator(triples_data, image_cache, datagens, 32)
-[X1, X2], Y = pair_gen.next()
+[X1, X2], Y = pair_gen.__next__()
 
 vecs = [np.random.random((10,)), np.random.random((10,))]
 s = cosine_distance(vecs)
@@ -169,10 +169,10 @@ model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accur
 logger.info(" ####### Inicio do treinamento ######")
 
 # Parametrizacao da Rede
-BATCH_SIZE = 32
-NUM_EPOCHS = 10
+BATCH_SIZE = 64
+NUM_EPOCHS = 1
 BEST_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final-500.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final.h5")
 
 logger.info("TAMANHO BATCH %s", BATCH_SIZE)
 logger.info("NUM DE EPOCAS %s", NUM_EPOCHS)

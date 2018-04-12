@@ -26,15 +26,18 @@ def carregar_pares(vqa_dir, imagenet_dir):
     pairs = []
     for vqa_file in os.listdir(vqa_dir):
          for img_file in os.listdir(imagenet_dir):
-             pairs.append( [ vqa_file, img_file] )
+             pairs.append( [vqa_file, img_file] )
     return pairs
 #################################################################
 def load_image_cache(image_cache, image_filename, directory):
-    image = plt.imread(os.path.join(directory, image_filename))
-    image = imresize(image, (299, 299))
-    image = image.astype("float32")
-    image = inception_v3.preprocess_input(image)
-    image_cache[image_filename] = image
+    try:
+        image = plt.imread(os.path.join(directory, image_filename))
+        image = imresize(image, (299, 299))
+        image = image.astype("float32")
+        image = inception_v3.preprocess_input(image)
+        image_cache[image_filename] = image
+    except:
+        logger.error("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
 ################################################################
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
@@ -65,7 +68,7 @@ def predizer(model):
     num_test_steps = len(pairs_data) // BATCH_SIZE
     curr_test_steps = 0
     
-    logger.debug( "NUM STEPS : %d",  num_test_steps)
+    logger.debug( "NUM STEPS PER BATCH : %d",  num_test_steps)
 
     for [X1test, X2test] in test_pair_gen:
         if curr_test_steps > num_test_steps:
@@ -83,14 +86,16 @@ def predizer(model):
 DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
-IMAGE_DIR = os.path.join(DATA_DIR,"predict")
-IMAGENET_DIR = os.path.join(IMAGE_DIR,"imagenet")
-VQA_DIR = os.path.join(IMAGE_DIR,"mscoco")
+IMAGE_DIR = DATA_DIR
+IMAGENET_DIR = os.path.join(IMAGE_DIR,"imagenet", "convertido")
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "teste")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
+
+logger.debug( "Carregando pares de imagens...")
 
 pairs_data = carregar_pares(VQA_DIR, IMAGENET_DIR)
 num_pairs = len(pairs_data)
@@ -111,7 +116,6 @@ logger.info("imagens carregadas")
 
 test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
 
-
 logger.info("Carregando o modelo")
 model = load_model(FINAL_MODEL_FILE)
 logger.info("Modelo carregado com sucesso")
@@ -124,7 +128,15 @@ predicoes = predizer(model)
 logger.info("Pronto")
 
 logger.info("Salvando as predicoes")
-df = pd.DataFrame(predicoes)
+
+
+tam = len(predicoes)
+
+triplas = []
+for i in range(0, tam):
+    pairs_data[i].append(predicoes[i])
+
+df = pd.DataFrame(pairs_data)
 df.to_csv(os.path.join(DATA_DIR, "predicoes.csv"))
 logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes.csv"))
 
