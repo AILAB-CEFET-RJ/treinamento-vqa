@@ -76,6 +76,8 @@ def predizer(model):
         Ytest_ = model.predict([X1test, X2test])        
         ytest_.extend(np.argmax(Ytest_, axis=1).tolist())
         curr_test_steps += 1
+        if(curr_test_steps % 1000 == 0):
+            logger.debug("%s pares analisados", curr_test_steps)
     #acc = accuracy_score(ytest, ytest_)
     #cm = confusion_matrix(ytest, ytest_)
     #return acc, cm, ytest
@@ -129,15 +131,14 @@ logger.info("Pronto")
 
 logger.info("Salvando as predicoes")
 
-
 tam = len(predicoes)
 
-triplas = []
-for i in range(0, tam):
+for i in range(0, tam-1):    
     pairs_data[i].append(predicoes[i])
 
-df = pd.DataFrame(pairs_data)
-df.to_csv(os.path.join(DATA_DIR, "predicoes.csv"))
+
+df = pd.DataFrame(pairs_data, columns=["mscoco", "imagenet", "similar"])
+df.to_csv(os.path.join(DATA_DIR, "predicoes.csv"), header=0, index = 0, compression="gzip")
 logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes.csv"))
 
 logger.info("Finalizado")
