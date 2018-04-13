@@ -1,4 +1,5 @@
 import os
+import time
 import logging
 import pandas as pd
 import numpy as np
@@ -69,7 +70,7 @@ def predizer(model):
     curr_test_steps = 0
     
     logger.debug( "NUM STEPS PER BATCH : %d",  num_test_steps)
-
+    start = time.time()
     for [X1test, X2test] in test_pair_gen:
         if curr_test_steps > num_test_steps:
             break        
@@ -78,6 +79,9 @@ def predizer(model):
         curr_test_steps += 1
         if(curr_test_steps % 1000 == 0):
             logger.debug("%s pares analisados", curr_test_steps)
+            elapsed = time.time() - start
+            logger.debug("tempo decorrido %s", elapsed)
+            start = time.time()
     #acc = accuracy_score(ytest, ytest_)
     #cm = confusion_matrix(ytest, ytest_)
     #return acc, cm, ytest
