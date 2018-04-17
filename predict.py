@@ -24,19 +24,19 @@ logger.addHandler(logging.StreamHandler())
 #               Configurando logs de execucao                   #
 #################################################################
 def carregar_pares(vqa_dir, imagenet_dir):
-    pairs = []
-    for vqa_file in os.listdir(vqa_dir):
-         for img_file in os.listdir(imagenet_dir):
-             pairs.append( [vqa_file, img_file] )
-    return pairs
+    df = pd.read_csv(os.path.join(DATA_DIR, "vqa_imagenet.csv"))
+    return df.values
 #################################################################
 def load_image_cache(image_cache, image_filename, directory):
     try:
-        image = plt.imread(os.path.join(directory, image_filename))
-        image = imresize(image, (299, 299))
-        image = image.astype("float32")
-        image = inception_v3.preprocess_input(image)
-        image_cache[image_filename] = image
+        if not os.path.isfile(os.path.join(directory, image_filename)):
+            image = plt.imread(os.path.join(directory, image_filename))
+            image = imresize(image, (299, 299))
+            image = image.astype("float32")
+            image = inception_v3.preprocess_input(image)
+            image_cache[image_filename] = image
+        else:
+            logger.warn("%s arquivo inexistente", os.path.join(directory, image_filename))
     except:
         logger.error("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
 ################################################################
@@ -94,7 +94,7 @@ FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR,"imagenet", "convertido")
-VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "teste")
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -106,6 +106,8 @@ logger.debug( "Carregando pares de imagens...")
 pairs_data = carregar_pares(VQA_DIR, IMAGENET_DIR)
 num_pairs = len(pairs_data)
 
+logger.debug(num_pairs)
+
 logger.debug( "Numero de pares : %d",  num_pairs)
 
 image_cache = {}
@@ -115,7 +117,7 @@ logger.debug( "carregando imagens")
 for i, (image_filename_l, image_filename_r) in enumerate(pairs_data):    
     if image_filename_l not in image_cache:
         load_image_cache(image_cache, image_filename_l, VQA_DIR)
-    if image_filename_r not in image_cache:
+    if image_filename_r not in image_cache:        
         load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
 
 logger.info("imagens carregadas")
@@ -139,7 +141,6 @@ tam = len(predicoes)
 
 for i in range(0, tam-1):    
     pairs_data[i].append(predicoes[i])
-
 
 df = pd.DataFrame(pairs_data, columns=["mscoco", "imagenet", "similar"])
 df.to_csv(os.path.join(DATA_DIR, "predicoes.csv"), header=0, index = 0, compression="gzip")
