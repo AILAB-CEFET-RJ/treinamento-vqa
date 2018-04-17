@@ -29,16 +29,15 @@ def carregar_pares(vqa_dir, imagenet_dir):
 #################################################################
 def load_image_cache(image_cache, image_filename, directory):
     try:
-        if not os.path.isfile(os.path.join(directory, image_filename)):
-            image = plt.imread(os.path.join(directory, image_filename))
-            image = imresize(image, (299, 299))
-            image = image.astype("float32")
-            image = inception_v3.preprocess_input(image)
-            image_cache[image_filename] = image
-        else:
-            logger.warn("%s arquivo inexistente", os.path.join(directory, image_filename))
+        image = plt.imread(os.path.join(directory, image_filename))
+        image = imresize(image, (299, 299))
+        image = image.astype("float32")
+        image = inception_v3.preprocess_input(image)
+        image_cache[image_filename] = image
+        return True
     except:
-        logger.error("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
+        logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
+        return False
 ################################################################
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
@@ -70,6 +69,8 @@ def predizer(model):
     curr_test_steps = 0
     
     logger.debug( "NUM STEPS PER BATCH : %d",  num_test_steps)
+    logger.debug( "BATCH SIZE : %d",  BATCH_SIZE)
+    
     start = time.time()
     for [X1test, X2test] in test_pair_gen:
         if curr_test_steps > num_test_steps:
@@ -87,8 +88,6 @@ def predizer(model):
     #return acc, cm, ytest
     return ytest_
 ################################################################
-
-
 DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
@@ -113,14 +112,20 @@ logger.debug( "Numero de pares : %d",  num_pairs)
 image_cache = {}
 
 logger.debug( "carregando imagens")
-
+valid_pairs = []
 for i, (image_filename_l, image_filename_r) in enumerate(pairs_data):    
+    added = True
     if image_filename_l not in image_cache:
-        load_image_cache(image_cache, image_filename_l, VQA_DIR)
+       added = load_image_cache(image_cache, image_filename_l, VQA_DIR)
     if image_filename_r not in image_cache:        
-        load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
-
+       added =load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
+    if added :
+        valid_pairs.append(pairs_data[i])
 logger.info("imagens carregadas")
+
+pairs_data = valid_pairs
+
+logger.debug( "Numero de pares validos : %d",  len(pairs_data))
 
 test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
 
