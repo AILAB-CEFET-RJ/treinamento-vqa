@@ -23,9 +23,13 @@ logger.addHandler(logging.StreamHandler())
 #################################################################
 #               Configurando logs de execucao                   #
 #################################################################
-def carregar_pares(vqa_dir, imagenet_dir):
-    df = pd.read_csv(os.path.join(DATA_DIR, "vqa_imagenet.csv"))
-    return df.values
+def carregar_pares(vqa_file, imagenet_dir):
+    image_pairs = []
+    for synset_dir in os.listdir(imagenet_dir):
+        for imagenet_file in os.listdir(os.path.join(IMAGENET_DIR, synset_dir)):
+            image_pairs.append( [vqa_file, os.path.join(synset_dir, imagenet_file)])
+    return image_pairs
+
 #################################################################
 def load_image_cache(image_cache, image_filename, directory):
     try:
@@ -34,10 +38,8 @@ def load_image_cache(image_cache, image_filename, directory):
         image = image.astype("float32")
         image = inception_v3.preprocess_input(image)
         image_cache[image_filename] = image
-        return True
     except:
         logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
-        return False
 ################################################################
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
@@ -75,7 +77,8 @@ def predizer(model):
     for [X1test, X2test] in test_pair_gen:
         if curr_test_steps > num_test_steps:
             break        
-        Ytest_ = model.predict([X1test, X2test])        
+        Ytest_ = model.predict([X1test, X2test])
+        logger.info("Predicao : %s", str(np.argmax(Ytest_, axis=1).tolist()))     
         ytest_.extend(np.argmax(Ytest_, axis=1).tolist())
         curr_test_steps += 1
         if(curr_test_steps % 1000 == 0):
@@ -92,7 +95,7 @@ DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR,"imagenet", "convertido")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
@@ -100,55 +103,54 @@ logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 
+logger.debug("IMAGENET_DIR %s", IMAGENET_DIR)
+logger.debug("VQA_DIR %s", VQA_DIR)
+
 logger.debug( "Carregando pares de imagens...")
 
-pairs_data = carregar_pares(VQA_DIR, IMAGENET_DIR)
-num_pairs = len(pairs_data)
+for vqa_file in os.listdir(VQA_DIR):
+    vqa_image_path = os.path.join(VQA_DIR,vqa_file)
+    logger.info("processando a imagem [%s]", vqa_image_path)
+    pairs_data = carregar_pares(vqa_file, IMAGENET_DIR)
+    num_pairs = len(pairs_data)
 
-logger.debug(num_pairs)
+    logger.debug( "Numero de pares : %d",  num_pairs)
+    image_cache = {}
 
-logger.debug( "Numero de pares : %d",  num_pairs)
+    logger.debug( "carregando imagens")
+    valid_pairs = []
+    
+    for i, (image_filename_l, image_filename_r) in enumerate(pairs_data):        
+        if image_filename_l not in image_cache:
+            load_image_cache(image_cache, image_filename_l, VQA_DIR)
+        if image_filename_r not in image_cache:        
+            load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)        
+        
+    test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
 
-image_cache = {}
+    logger.info("Carregando o modelo")
+    model = load_model(FINAL_MODEL_FILE)
+    logger.info("Modelo carregado com sucesso")
 
-logger.debug( "carregando imagens")
-valid_pairs = []
-for i, (image_filename_l, image_filename_r) in enumerate(pairs_data):    
-    added = True
-    if image_filename_l not in image_cache:
-       added = load_image_cache(image_cache, image_filename_l, VQA_DIR)
-    if image_filename_r not in image_cache:        
-       added =load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
-    if added :
-        valid_pairs.append(pairs_data[i])
-logger.info("imagens carregadas")
+    BATCH_SIZE = 5
 
-pairs_data = valid_pairs
+    #acc,cm, y = predizer(model)
+    logger.info("Predizendo similaridades")
+    predicoes = predizer(model)
+    logger.info("Pronto")
 
-logger.debug( "Numero de pares validos : %d",  len(pairs_data))
+    logger.info("Salvando as predicoes")
 
-test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
+    tam = len(predicoes)
 
-logger.info("Carregando o modelo")
-model = load_model(FINAL_MODEL_FILE)
-logger.info("Modelo carregado com sucesso")
+    for i in range(0, tam-1):    
+        if predicoes[i][2] == 1:
+            pairs_data[i].append(predicoes[i])
 
-BATCH_SIZE = 5
+    predict_filename = "predicoes_{:s}.csv".format(vqa_file)
 
-#acc,cm, y = predizer(model)
-logger.info("Predizendo similaridades")
-predicoes = predizer(model)
-logger.info("Pronto")
-
-logger.info("Salvando as predicoes")
-
-tam = len(predicoes)
-
-for i in range(0, tam-1):    
-    pairs_data[i].append(predicoes[i])
-
-df = pd.DataFrame(pairs_data, columns=["mscoco", "imagenet", "similar"])
-df.to_csv(os.path.join(DATA_DIR, "predicoes.csv"), header=0, index = 0, compression="gzip")
-logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes.csv"))
+    df = pd.DataFrame(pairs_data, columns=["mscoco", "imagenet", "similar"])
+    df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), header=0, index = 0, compression="gzip")
+    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" ,predict_filename))
 
 logger.info("Finalizado")
