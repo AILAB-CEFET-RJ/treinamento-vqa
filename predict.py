@@ -45,7 +45,8 @@ def load_image_cache(image_cache, image_filename, directory):
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
         # shuffle once per batch
-        indices = np.random.permutation(np.arange(len(triples)))        
+        #indices = np.random.permutation(np.arange(len(triples)))        
+        indices = np.array( range(0, len(triples)-1))
         num_batches = len(triples) // batch_size        
         for bid in range(num_batches):
             
@@ -145,6 +146,9 @@ for vqa_file in os.listdir(VQA_DIR):
 
         tam = len(predicoes)
         
+        print(tam)
+        print(num_pairs)
+        sys.exit()
         for i in range(0, tam-1):
             if predicoes[i] == 1:            
                 similarities.append( [ pairs_data[i][0], pairs_data[i][1], 1 ])                
