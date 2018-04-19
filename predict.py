@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 #################################################################
 #               Configurando logs de execucao                   #
 #################################################################
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename='logs/predict.log',
@@ -48,10 +48,8 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
         #indices = np.random.permutation(np.arange(len(triples)))        
         indices = np.array( range(0, len(triples)-1))
         num_batches = len(triples) // batch_size        
-        for bid in range(num_batches):
-            
-            batch_indices = indices[bid * batch_size : (bid + 1) * batch_size]
-            
+        for bid in range(num_batches):            
+            batch_indices = indices[bid * batch_size : (bid + 1) * batch_size]            
             batch = [triples[i] for i in batch_indices]
             X1 = np.zeros((batch_size, 299, 299, 3))
             X2 = np.zeros((batch_size, 299, 299, 3))
@@ -67,32 +65,27 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
 ################################################################
 def predizer(model):    
     
-    ytest, ytest_ = [], []    
+    ytest_ = [[]]
     test_pair_gen = pair_generator(pairs_data, image_cache, None, BATCH_SIZE)    
     num_test_steps = len(pairs_data) // BATCH_SIZE
     curr_test_steps = 0
     
     logger.debug( "NUM STEPS PER BATCH : %d",  num_test_steps)
     logger.debug( "BATCH SIZE : %d",  BATCH_SIZE)
-    
-    start = time.time()
+        
     for [X1test, X2test] in test_pair_gen:
         if curr_test_steps > num_test_steps:
             break        
         Ytest_ = model.predict([X1test, X2test])        
-        ytest_.extend(np.argmax(Ytest_, axis=1).tolist())
+        ytest_.extend(['LEFT', 'RIGHT', np.argmax(Ytest_, axis=1).tolist()])
         curr_test_steps += 1
-        if(curr_test_steps % 1000 == 0):
-            logger.debug("%s pares analisados", curr_test_steps)
-            elapsed = time.time() - start
-            logger.debug("tempo decorrido %s", elapsed)
-            start = time.time()
+        if(curr_test_steps % 100 == 0):
+            logger.debug("%s pares analisados", curr_test_steps)        
     #acc = accuracy_score(ytest, ytest_)
     #cm = confusion_matrix(ytest, ytest_)
     #return acc, cm, ytest
     return ytest_
 ################################################################
-
 DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
@@ -120,6 +113,7 @@ for vqa_file in os.listdir(VQA_DIR):
     similarities = []
     
     for synset_dir in os.listdir(IMAGENET_DIR):
+        logger.info("processando o synset [%s]", synset_dir)
         pairs_data = carregar_pares(vqa_file, synset_dir)
         num_pairs = len(pairs_data)
 
@@ -137,7 +131,7 @@ for vqa_file in os.listdir(VQA_DIR):
             
         test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
         logger.debug( "pronto")
-        BATCH_SIZE = 5
+        BATCH_SIZE = 32
 
         #acc,cm, y = predizer(model)
         logger.info("Predizendo similaridades...")
@@ -145,19 +139,16 @@ for vqa_file in os.listdir(VQA_DIR):
         logger.info("pronto")
 
         tam = len(predicoes)
-        
-        print(tam)
-        print(num_pairs)
-        sys.exit()
-        for i in range(0, tam-1):
+                
+        """for i in range(0, tam-1):
             if predicoes[i] == 1:            
-                similarities.append( [ pairs_data[i][0], pairs_data[i][1], 1 ])                
-    
+                similarities.append([pairs_data[i][0], pairs_data[i][1], 1 ])
+        """
     logger.info("Salvando as predicoes...")
     predict_filename = "predicoes_{:s}.csv".format(vqa_file)
 
-    df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similar"])
+    df = pd.DataFrame(predicoes, columns=["mscoco", "imagenet", "similar"])
     df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), header=0, index = 0, compression="gzip")
     logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))        
-
+    break
 logger.info("Finalizado !!!")
