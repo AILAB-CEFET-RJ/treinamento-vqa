@@ -53,19 +53,22 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
             batch = [triples[i] for i in batch_indices]
             X1 = np.zeros((batch_size, 299, 299, 3))
             X2 = np.zeros((batch_size, 299, 299, 3))
+            X3, X4 = [],[]
             
             for i, (image_filename_l, image_filename_r) in enumerate(batch):                
-                if datagens is None or len(datagens) == 0:
-                    X1[i] = image_cache[image_filename_l]                    
-                    X2[i] = image_cache[image_filename_r]
+                X3.append(image_filename_l)
+                X4.append(image_filename_r)
+                if datagens is None or len(datagens) == 0:                   
+                    X1[i] = image_cache[image_filename_l]
+                    X2[i] = image_cache[image_filename_r]                    
                 else:
                     X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
                     X2[i] = datagens[1].random_transform(image_cache[image_filename_r])
-            yield [X1, X2]
+            yield [X1, X2, X3, X4]
 ################################################################
 def predizer(model):    
     
-    ytest_ = [[]]
+    ytest_ = []
     test_pair_gen = pair_generator(pairs_data, image_cache, None, BATCH_SIZE)    
     num_test_steps = len(pairs_data) // BATCH_SIZE
     curr_test_steps = 0
@@ -73,11 +76,17 @@ def predizer(model):
     logger.debug( "NUM STEPS PER BATCH : %d",  num_test_steps)
     logger.debug( "BATCH SIZE : %d",  BATCH_SIZE)
         
-    for [X1test, X2test] in test_pair_gen:
+    for [X1test, X2test, image_l, image_r] in test_pair_gen:
         if curr_test_steps > num_test_steps:
             break        
-        Ytest_ = model.predict([X1test, X2test])        
-        ytest_.extend(['LEFT', 'RIGHT', np.argmax(Ytest_, axis=1).tolist()])
+        y = model.predict([X1test, X2test])        
+        ytest_.extend(np.argmax(y, axis=1).tolist())
+        
+        print(image_filename_l, image_filename_r)
+        print(ytest_)    
+        sys.exit()
+
+
         curr_test_steps += 1
         if(curr_test_steps % 100 == 0):
             logger.debug("%s pares analisados", curr_test_steps)        
@@ -131,24 +140,21 @@ for vqa_file in os.listdir(VQA_DIR):
             
         test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
         logger.debug( "pronto")
-        BATCH_SIZE = 32
+        BATCH_SIZE = 64
 
         #acc,cm, y = predizer(model)
         logger.info("Predizendo similaridades...")
         predicoes = predizer(model)
         logger.info("pronto")
-
-        tam = len(predicoes)
-                
-        """for i in range(0, tam-1):
-            if predicoes[i] == 1:            
-                similarities.append([pairs_data[i][0], pairs_data[i][1], 1 ])
-        """
+       
+        print(predicoes)
+        sys.exit()
+    
     logger.info("Salvando as predicoes...")
     predict_filename = "predicoes_{:s}.csv".format(vqa_file)
 
     df = pd.DataFrame(predicoes, columns=["mscoco", "imagenet", "similar"])
     df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), header=0, index = 0, compression="gzip")
-    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))        
-    break
+    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
+    
 logger.info("Finalizado !!!")
