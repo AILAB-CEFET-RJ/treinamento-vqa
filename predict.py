@@ -60,7 +60,10 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
                 X4.append(image_filename_r)
                 if datagens is None or len(datagens) == 0:                   
                     X1[i] = image_cache[image_filename_l]
-                    X2[i] = image_cache[image_filename_r]                    
+                    X2[i] = image_cache[image_filename_r]
+                    print(X1.shape)
+                    sys.exit()
+
                 else:
                     X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
                     X2[i] = datagens[1].random_transform(image_cache[image_filename_r])
@@ -140,7 +143,7 @@ for vqa_file in os.listdir(VQA_DIR):
             
         test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
         logger.debug( "pronto")
-        BATCH_SIZE = 64
+        BATCH_SIZE = 2
 
         #acc,cm, y = predizer(model)
         logger.info("Predizendo similaridades...")
