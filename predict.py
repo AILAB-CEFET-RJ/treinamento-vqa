@@ -135,7 +135,7 @@ for vqa_file in ["COCO_train2014_000000100337.jpg", "COCO_train2014_000000100482
         logger.info("pronto")
    
         for i in range(num_pairs-1):
-            if predizer[i] == 1:
+            if predicoes[i] == 1:
                 pairs_data[i].extend([predicoes[i]])
                 similarities.append( pairs_data[i] )
         
