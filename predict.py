@@ -102,7 +102,7 @@ logger.info("Modelo carregado com sucesso")
 logger.debug( "Carregando pares de imagens...")
 
 #for vqa_file in os.listdir(VQA_DIR):
-for vqa_file in ["COCO_train2014_000000100337.jpg", "COCO_train2014_000000100482.jpg", "COCO_train2014_000000100599.jpg", "COCO_train2014_000000100603.jpg", "COCO_train2014_000000101581.jpg"]:
+for vqa_file in ["COCO_train2014_000000101794.jpg","COCO_train2014_000000101837.jpg","COCO_train2014_000000101966.jpg","COCO_train2014_000000102059.jpg","COCO_train2014_000000102118.jpg"]:
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
