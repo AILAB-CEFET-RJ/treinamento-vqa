@@ -26,9 +26,13 @@ logger.addHandler(logging.StreamHandler())
 #               Configurando logs de execucao                   #
 #################################################################
 def carregar_pares(vqa_file, synset_dir):
-    image_pairs = []    
-    for imagenet_file in os.listdir(os.path.join(IMAGENET_DIR, synset_dir)):
-        image_pairs.append( [vqa_file, os.path.join(synset_dir, imagenet_file)])
+    image_pairs = []
+    synset_path = os.path.join(IMAGENET_DIR, synset_dir)
+    if os.path.isdir(synset_path):
+        for imagenet_file in os.listdir(synset_path):
+            image_pairs.append( [vqa_file, os.path.join(synset_dir, imagenet_file)])
+    else:
+        logger.debug("%s nao existe", synset_path)        
     return image_pairs
 
 #################################################################
@@ -80,6 +84,14 @@ def predizer(model):
         curr_test_steps += 1                
     return ytest_
 ################################################################
+def load_synset_list(path):
+    df = pd.read_csv(path, names=["synset"], encoding="utf-8", header=1)
+    return df.values
+################################################################
+def load_vqa_filenames_list(path):
+    df = pd.read_csv(path, names=["filename"], encoding="utf-8", header=1)
+    return df.values
+################################################################
 DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
@@ -101,19 +113,28 @@ logger.info("Modelo carregado com sucesso")
 
 logger.debug( "Carregando pares de imagens...")
 
+synsets = load_synset_list(os.path.join(DATA_DIR, "dog_synset.csv"))
+vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_dogs.csv"))
+
 #for vqa_file in os.listdir(VQA_DIR):
-for vqa_file in ["COCO_train2014_000000101794.jpg","COCO_train2014_000000101837.jpg","COCO_train2014_000000101966.jpg","COCO_train2014_000000102059.jpg","COCO_train2014_000000102118.jpg"]:
+for filename in vqa_filenames_list:    
+    vqa_file = filename[0]
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
     
-    for synset_dir in os.listdir(IMAGENET_DIR):
-    #for synset_dir in ["n01503061", "n00007846", "n01601694"]:
+    #for synset_dir in os.listdir(IMAGENET_DIR):
+    for synset in synsets:
+        synset_dir = synset[0]
         logger.info("processando o synset [%s]", synset_dir)
         pairs_data = carregar_pares(vqa_file, synset_dir)
         num_pairs = len(pairs_data)
 
         logger.debug( "Numero de pares : %d",  num_pairs)
+        
+        if num_pairs == 0:
+            continue
+
         image_cache = {}
 
         logger.info( "carregando imagens...")
