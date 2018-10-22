@@ -159,10 +159,9 @@ for filename in vqa_filenames_list:
         predicoes = predizer(model)
         logger.info("pronto")
    
-        for i in range(num_pairs-1):
-            if predicoes[i] == 1:
-                pairs_data[i].extend([predicoes[i]])
-                similarities.append( pairs_data[i] )
+        for i in range(num_pairs-1):            
+            pairs_data[i].extend([predicoes[i]])
+            similarities.append( pairs_data[i] )
         
     logger.info("Salvando as predicoes...")
     predict_filename = "predicoes_{:s}.csv".format(vqa_file)
