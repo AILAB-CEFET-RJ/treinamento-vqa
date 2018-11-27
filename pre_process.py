@@ -6,16 +6,13 @@ from keras.layers.merge import Concatenate
 from keras.models import Model, load_model
 from keras.utils import np_utils
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
-import itertools
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
+import os, sys, itertools, matplotlib, logging
 
-import matplotlib
+
 matplotlib.use('Agg')
-
-import logging
 
 #################################################################
 #               Configurando logs de execucao                   #
@@ -43,6 +40,7 @@ def carregar_vetores(vector_file):
         vec = np.array([float(v) for v in image_vec.split(",")])
         vec_dict[image_name] = vec
     fvec.close()
+    print(len(vec_dict), "vetores carregados")
     return vec_dict
 
 def train_test_split(triples, splits):
@@ -67,11 +65,13 @@ def data_generator(triples, vec_size, vec_dict, batch_size=32):
             batch = [triples[i] for i in batch_indices]
             yield batch_to_vectors(batch, vec_size, vec_dict)
 
-def batch_to_vectors(batch, vec_size, vec_dict):
+def batch_to_vectors(batch, vec_size, vec_dict):    
     X1 = np.zeros((len(batch), vec_size))
     X2 = np.zeros((len(batch), vec_size))
-    Y = np.zeros((len(batch), 2))
+    Y = np.zeros((len(batch), 2))   
     for tid in range(len(batch)):
+        print(batch, tid, vec_dict[batch[tid][0]])
+        sys.exit()
         X1[tid] = vec_dict[batch[tid][0]]
         X2[tid] = vec_dict[batch[tid][1]]
         Y[tid] = [1, 0] if batch[tid][2] == 0 else [0, 1]
@@ -103,18 +103,20 @@ def evaluate_model(model_file, test_gen):
 #                     Inicio da Execucao                        #
 #################################################################
 DATA_DIR = os.environ["DATA_DIR"]
-VQA_DIR = os.path.join(DATA_DIR, "vqa")
-IMAGE_DIR = os.path.join(VQA_DIR, "mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
+VQA_DIR = os.path.join(DATA_DIR,"vqa")
+IMAGE_DIR = os.path.join(VQA_DIR,"convetidas")
+#TRIPLES_FILE = os.path.join(VQA_DIR, "triples_data_distilation_1.csv") 
 #VALIDATION_TRIPLES_FILE = os.path.join(DATA_DIR, "triples_val.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "vqa_train", "triples_1.csv") 
+
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 #logger.debug("VAL_TRIPLES_FILE %s", VALIDATION_TRIPLES_FILE)
 
-BATCH_SIZE = 64
-NUM_EPOCHS = 1
+BATCH_SIZE = 16
+NUM_EPOCHS = 3
 
 VECTORIZERS = ["InceptionV3"]
 MERGE_MODES = ["Dot"]
@@ -136,7 +138,7 @@ logger.debug("Validation size %d", len(val_triples))
 logger.debug("Test size %d", len(test_triples))
 
 VECTOR_SIZE = 2048
-VECTOR_FILE = os.path.join(DATA_DIR, "inception-vectors.tsv")
+VECTOR_FILE = os.path.join(VQA_DIR, "vectors", "inception-vectors-destilation-1.tsv")
 #VALIDATION_VECTOR_FILE = os.path.join(DATA_DIR, "inception-vectors-validation.tsv")
 logger.info("VECTOR_FILE %s", VECTOR_FILE)
 
@@ -173,7 +175,7 @@ logger.info("compilando o modelo")
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 logger.info("pronto")
 
-best_model_name = get_model_file(DATA_DIR, "inceptionv3", "dot", "best")
+best_model_name = get_model_file(VQA_DIR, "inceptionv3", "dot", "best")
 logger.debug("model name : %s", best_model_name)
 
 csv_logger = CSVLogger(os.path.join("logs", 'training_epochs.csv'))
@@ -210,7 +212,7 @@ plt.legend(loc="best")
 plt.savefig("graphs/best.png")
 plt.close()
 
-final_model_name = get_model_file(DATA_DIR, "inceptionv3", "dot", "final")
+final_model_name = get_model_file(VQA_DIR, "inceptionv3", "dot", "final")
 logger.info("salvando o modelo em %s", final_model_name)
 
 model.save(final_model_name)
