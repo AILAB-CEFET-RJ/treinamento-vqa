@@ -56,13 +56,17 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
             X2 = np.zeros((batch_size, 299, 299, 3))
             Y = np.zeros((batch_size, 2))
             for i, (image_filename_l, image_filename_r, label) in enumerate(batch):
-                if datagens is None or len(datagens) == 0:
-                    X1[i] = image_cache[image_filename_l]
-                    X2[i] = image_cache[image_filename_r]
-                else:
-                    X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
-                    X2[i] = datagens[1].random_transform(image_cache[image_filename_r])
-                Y[i] = [1, 0] if label == 0 else [0, 1]
+                try:
+                    if datagens is None or len(datagens) == 0:
+                        X1[i] = image_cache[image_filename_l]
+                        X2[i] = image_cache[image_filename_r]
+                    else:                                            
+                        X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
+                        X2[i] = datagens[1].random_transform(image_cache[image_filename_r])
+                    Y[i] = [1, 0] if label == 0 else [0, 1]
+                except:
+                    logger.error("FALHA AO PROCESSAR L : %s - R : %s", image_filename_l, image_filename_r)
+                    continue
             yield [X1, X2], Y
 
 #################################################################
@@ -100,7 +104,8 @@ def evaluate_model(model):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"mscoco")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
+#TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "vqa_train", "triples_2.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -153,7 +158,7 @@ vector_1 = inception_1.get_layer("avg_pool_1").output
 vector_2 = inception_2.get_layer("avg_pool_2").output
 
 # carregando a rede pre-treinada
-siamese_head = load_model(os.path.join(DATA_DIR, "models", "inceptionv3-dot-best.h5"))
+siamese_head = load_model(os.path.join(DATA_DIR, "vqa", "models", "inceptionv3-destilation1-dot-best.h5"))
 for layer in siamese_head.layers:
     print(layer.name, layer.input_shape, layer.output_shape)
 
@@ -169,10 +174,10 @@ model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accur
 logger.info(" ####### Inicio do treinamento ######")
 
 # Parametrizacao da Rede
-BATCH_SIZE = 64
-NUM_EPOCHS = 1
-BEST_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-final.h5")
+BATCH_SIZE = 128
+NUM_EPOCHS = 3
+BEST_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation", "inception-distlation1-ft-best.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation", "inception-distlation1-ft-final.h5")
 
 logger.info("TAMANHO BATCH %s", BATCH_SIZE)
 logger.info("NUM DE EPOCAS %s", NUM_EPOCHS)

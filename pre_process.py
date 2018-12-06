@@ -39,8 +39,7 @@ def carregar_vetores(vector_file):
         image_name, image_vec = line.strip().split("\t")
         vec = np.array([float(v) for v in image_vec.split(",")])
         vec_dict[image_name] = vec
-    fvec.close()
-    print(len(vec_dict), "vetores carregados")
+    fvec.close()    
     return vec_dict
 
 def train_test_split(triples, splits):
@@ -69,9 +68,7 @@ def batch_to_vectors(batch, vec_size, vec_dict):
     X1 = np.zeros((len(batch), vec_size))
     X2 = np.zeros((len(batch), vec_size))
     Y = np.zeros((len(batch), 2))   
-    for tid in range(len(batch)):
-        print(batch, tid, vec_dict[batch[tid][0]])
-        sys.exit()
+    for tid in range(len(batch)):        
         X1[tid] = vec_dict[batch[tid][0]]
         X2[tid] = vec_dict[batch[tid][1]]
         Y[tid] = [1, 0] if batch[tid][2] == 0 else [0, 1]
@@ -107,16 +104,16 @@ VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"convetidas")
 #TRIPLES_FILE = os.path.join(VQA_DIR, "triples_data_distilation_1.csv") 
 #VALIDATION_TRIPLES_FILE = os.path.join(DATA_DIR, "triples_val.csv") 
-TRIPLES_FILE = os.path.join(DATA_DIR, "vqa_train", "triples_1.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "vqa_train", "triples_2.csv") 
 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
-logger.debug("IMAGE_DIR %s", IMAGE_DIR)
-logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
+logger.debug("IMAGE_DIR %s", IMAGE_DIR)  
+logger.debug("TRIPLES_FILE %s", TRIPLES_FILE) 
 #logger.debug("VAL_TRIPLES_FILE %s", VALIDATION_TRIPLES_FILE)
 
-BATCH_SIZE = 16
-NUM_EPOCHS = 3
+BATCH_SIZE = 128
+NUM_EPOCHS = 10
 
 VECTORIZERS = ["InceptionV3"]
 MERGE_MODES = ["Dot"]
@@ -175,13 +172,13 @@ logger.info("compilando o modelo")
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 logger.info("pronto")
 
-best_model_name = get_model_file(VQA_DIR, "inceptionv3", "dot", "best")
+best_model_name = get_model_file(VQA_DIR, "inceptionv3-destilation1", "dot", "best")
 logger.debug("model name : %s", best_model_name)
 
-csv_logger = CSVLogger(os.path.join("logs", 'training_epochs.csv'))
+csv_logger = CSVLogger(os.path.join("logs", 'preprocess_epochs_destilation_1.csv'))
 checkpoint = ModelCheckpoint(best_model_name, save_best_only=True)
 
-logger.debug("gravando dados das epocas em %s", os.path.join("logs", 'preprocess_epochs.csv'))
+logger.debug("gravando dados das epocas em %s", os.path.join("logs", 'preprocess_epochs_destilation_1.csv'))
 callback_list = [csv_logger, checkpoint]
 
 train_steps_per_epoch = len(train_triples) // BATCH_SIZE
@@ -209,10 +206,10 @@ plt.plot(history.history["acc"], color="r", label="train")
 plt.plot(history.history["val_acc"], color="b", label="validation")
 plt.legend(loc="best")
 
-plt.savefig("graphs/best.png")
+plt.savefig("graphs/best_destilation_1.png")
 plt.close()
 
-final_model_name = get_model_file(VQA_DIR, "inceptionv3", "dot", "final")
+final_model_name = get_model_file(VQA_DIR, "inceptionv3-destilation1", "dot", "final")
 logger.info("salvando o modelo em %s", final_model_name)
 
 model.save(final_model_name)
