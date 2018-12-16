@@ -57,8 +57,8 @@ def vectorize_images(image_dir, image_size, preprocessor,
 IMAGE_SIZE = 299
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
-IMAGE_DIR = os.path.join(VQA_DIR,"convetidas")
-VECTOR_FILE = os.path.join(VQA_DIR, "vectors", "inception-vectors-destilation-1.tsv")
+IMAGE_DIR = os.path.join(VQA_DIR,"mscoco")
+VECTOR_FILE = os.path.join(VQA_DIR, "vectors", "inception-vectors-destilation.tsv")
 
 #################################################################
 #                       Inicio da Execucao                      #

@@ -1,7 +1,7 @@
 import os
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+#os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import sys
 import time
@@ -47,8 +47,10 @@ def load_image_cache(image_cache, image_filename, directory):
         image = image.astype("float32")
         image = inception_v3.preprocess_input(image)
         image_cache[image_filename] = image
-    except:
-        logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))        
+    except Exception as e:
+        logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
+        logger.error(e)
+        sys.exit()        
 ################################################################
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
@@ -83,8 +85,10 @@ def predizer(model):
     for [X1test, X2test] in test_pair_gen:
         if curr_test_steps >= num_test_steps:
             break        
-        y = model.predict([X1test, X2test])        
-        ytest_.extend(np.argmax(y, axis=1).tolist())
+        y = model.predict([X1test, X2test])      
+        #ytest_.extend(np.argmax(y, axis=1).tolist())
+        #retornando o score ao inves da similaridade
+        ytest_.extend([y[0,1]])
         curr_test_steps += 1                
     return ytest_
 ################################################################
@@ -97,11 +101,12 @@ def load_vqa_filenames_list(path):
     return df.values
 ################################################################
 DATA_DIR = os.environ["DATA_DIR"]
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
+#FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation1-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "train2014")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -118,7 +123,7 @@ logger.info("Modelo carregado com sucesso")
 logger.debug( "Carregando pares de imagens...")
 
 synsets = load_synset_list(os.path.join(DATA_DIR, "synsets_dog_cat.csv"))
-vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_images.csv"))
+vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
 #for vqa_file in os.listdir(VQA_DIR):
 for filename in vqa_filenames_list:    
@@ -158,17 +163,17 @@ for filename in vqa_filenames_list:
         logger.info("Predizendo similaridades...")
         predicoes = predizer(model)
         logger.info("pronto")
-   
         for i in range(num_pairs-1):
             if predicoes[i] == 1:
                 pairs_data[i].extend([predicoes[i]])
                 similarities.append( pairs_data[i] )
         
-    logger.info("Salvando as predicoes...")
-    predict_filename = "predicoes_{:s}.csv".format(vqa_file)
+        logger.info("Salvando as predicoes...")
+        #predict_filename = "predicoes_{:s}.csv".format(vqa_file)
+        predict_filename = "predicoes_distilation_1.csv"
 
-    df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similar"])
-    df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), header=0, index = 0, encoding="utf-8" )
-    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
-    
+        df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similar"])
+        df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
+        logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename)) 
+
 logger.info("Finalizado !!!")

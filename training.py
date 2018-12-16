@@ -104,8 +104,12 @@ def evaluate_model(model):
 DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"mscoco")
+
+BEST_MODEL_FILENAME = "inceptionv3-destilation3-dot-best.h5"
+FINAL_MODEL_FILENAME = "inceptionv3-destilation3-dot-final.h5"
+
 #TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
-TRIPLES_FILE = os.path.join(DATA_DIR, "vqa_train", "triples_2.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_4.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -158,7 +162,7 @@ vector_1 = inception_1.get_layer("avg_pool_1").output
 vector_2 = inception_2.get_layer("avg_pool_2").output
 
 # carregando a rede pre-treinada
-siamese_head = load_model(os.path.join(DATA_DIR, "vqa", "models", "inceptionv3-destilation1-dot-best.h5"))
+siamese_head = load_model(os.path.join(VQA_DIR, "distilation", BEST_MODEL_FILENAME))
 for layer in siamese_head.layers:
     print(layer.name, layer.input_shape, layer.output_shape)
 
@@ -174,10 +178,10 @@ model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accur
 logger.info(" ####### Inicio do treinamento ######")
 
 # Parametrizacao da Rede
-BATCH_SIZE = 128
-NUM_EPOCHS = 3
-BEST_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation", "inception-distlation1-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation", "inception-distlation1-ft-final.h5")
+BATCH_SIZE = 196
+NUM_EPOCHS = 1 
+BEST_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation", BEST_MODEL_FILENAME)
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation", FINAL_MODEL_FILENAME)
 
 logger.info("TAMANHO BATCH %s", BATCH_SIZE)
 logger.info("NUM DE EPOCAS %s", NUM_EPOCHS)
@@ -239,7 +243,7 @@ plt.plot(history.history["val_loss"], color="red", label="validation")
 plt.legend(loc="best")
 
 plt.tight_layout()
-plt.savefig("graphs/best.png")
+plt.savefig("graphs/best3.png")
 plt.close()
 
 logger.info("salvando o modelo final em %s", FINAL_MODEL_FILE)
