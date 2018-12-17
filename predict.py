@@ -102,11 +102,11 @@ def load_vqa_filenames_list(path):
 ################################################################
 DATA_DIR = os.environ["DATA_DIR"]
 #FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation1-ft-best.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation2-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
-VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "convertidas")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -164,13 +164,19 @@ for filename in vqa_filenames_list:
         predicoes = predizer(model)
         logger.info("pronto")
         for i in range(num_pairs-1):
-            if predicoes[i] == 1:
+            pairs_data[i].extend([predicoes[i]])
+            similarities.append( pairs_data[i] )
+
+            """if predicoes[i] == 1:
                 pairs_data[i].extend([predicoes[i]])
                 similarities.append( pairs_data[i] )
-        
+            """
+
+       
+ 
         logger.info("Salvando as predicoes...")
-        #predict_filename = "predicoes_{:s}.csv".format(vqa_file)
-        predict_filename = "predicoes_distilation_1.csv"
+        predict_filename = "predicoes_{:s}.csv".format(vqa_file)
+        #predict_filename = "predicoes_distilation_2.csv"
 
         df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similar"])
         df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
