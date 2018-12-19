@@ -158,9 +158,12 @@ for filename in vqa_filenames_list:
         #test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
         logger.debug( "pronto")
         BATCH_SIZE = 64
+        STEPS = num_pairs // BATCH_SIZE
         
         logger.info("Predizendo similaridades...")
-        predicoes = model.predict(pairs_data, batch_size=BATCH_SIZE, verbose=1)        
+        #predicoes = model.predict(np.array(pairs_data), batch_size=BATCH_SIZE, verbose=1)        
+        predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS)
+
         logger.info("pronto")
  
         print("predicoes", predicoes)

@@ -102,11 +102,11 @@ def load_vqa_filenames_list(path):
 ################################################################
 DATA_DIR = os.environ["DATA_DIR"]
 #FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation2-ft-best.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation1-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "convertidas")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "train2014")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -125,9 +125,9 @@ logger.debug( "Carregando pares de imagens...")
 synsets = load_synset_list(os.path.join(DATA_DIR, "synsets_dog_cat.csv"))
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
-#for vqa_file in os.listdir(VQA_DIR):
-for filename in vqa_filenames_list:    
-    vqa_file = filename[0]
+for vqa_file in os.listdir(VQA_DIR):
+#for filename in vqa_filenames_list:    
+    #vqa_file = filename[0]
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
@@ -175,8 +175,8 @@ for filename in vqa_filenames_list:
        
  
         logger.info("Salvando as predicoes...")
-        predict_filename = "predicoes_{:s}.csv".format(vqa_file)
-        #predict_filename = "predicoes_distilation_2.csv"
+        #predict_filename = "predicoes_{:s}.csv".format(vqa_file)
+        predict_filename = "predicoes_distilation_1.csv"
 
         df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similar"])
         df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
