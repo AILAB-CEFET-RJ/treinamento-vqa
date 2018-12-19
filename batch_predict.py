@@ -102,11 +102,11 @@ def load_vqa_filenames_list(path):
 ################################################################
 DATA_DIR = os.environ["DATA_DIR"]
 #FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation2-ft-best.h5")
-TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation1-ft-best.h5")
+TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv")
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "convertidas")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "train2014")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
