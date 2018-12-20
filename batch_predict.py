@@ -167,6 +167,8 @@ for filename in vqa_filenames_list:
         logger.info("pronto")
  
         print("predicoes", predicoes)
+        print(np.array(predicoes).shape)
+
         sys.exit()
 
         logger.info("Salvando as predicoes...")
