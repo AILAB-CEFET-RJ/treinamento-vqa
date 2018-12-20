@@ -26,9 +26,17 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
-#################################################################
-#               Configurando logs de execucao                   #
-#################################################################
+
+def tic():
+    global _start_time 
+    _start_time = time.time()
+
+def tac():
+    t_sec = round(time.time() - _start_time)
+    (t_min, t_sec) = divmod(t_sec,60)
+    (t_hour,t_min) = divmod(t_min,60) 
+    logger.info('Time passed: {}hour:{}min:{}sec'.format(t_hour,t_min,t_sec)) 
+
 def carregar_pares(vqa_file, synset_dir):
     image_pairs = []
     synset_path = os.path.join(IMAGENET_DIR, synset_dir)
@@ -117,6 +125,7 @@ logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 logger.debug("IMAGENET_DIR %s", IMAGENET_DIR)
 logger.debug("VQA_DIR %s", VQA_DIR)
 
+tic()
 
 logger.info("Carregando o modelo")
 model = load_model(FINAL_MODEL_FILE)
@@ -183,4 +192,5 @@ for filename in vqa_filenames_list:
         df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
         logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename)) 
 
+tac()
 logger.info("Finalizado !!!")
