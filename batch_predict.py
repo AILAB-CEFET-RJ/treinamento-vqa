@@ -38,10 +38,6 @@ def tac():
     (t_hour,t_min) = divmod(t_min,60) 
     logger.info('Time passed: {}hour:{}min:{}sec'.format(t_hour,t_min,t_sec))
 
-
-#################################################################
-#               Configurando logs de execucao                   #
-#################################################################
 def carregar_pares(vqa_file, synset_dir):
     image_pairs = []
     synset_path = os.path.join(IMAGENET_DIR, synset_dir)
@@ -126,6 +122,9 @@ logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
+
+logger.debug("IMAGENET_DIR %s", IMAGENET_DIR)
+logger.debug("VQA_DIR %s", VQA_DIR)
 
 tic()
 
