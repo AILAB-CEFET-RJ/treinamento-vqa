@@ -1,6 +1,14 @@
 import os, sys, time, logging
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
+from keras.models import Model
+from scipy.misc import imresize
+from keras.applications import inception_v3, xception
+from PIL import Image
 
+import pickle
 #################################################################
 #               Configurando logs de execucao                   #
 #################################################################
@@ -30,8 +38,9 @@ def load_image_cache(image_cache, image_filename, directory):
         image = image.astype("float32")
         image = inception_v3.preprocess_input(image)
         image_cache[image_filename] = image
-    except:
+    except Exception as err:
         logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))        
+        logger.debug("%s", err)
 
 def load_synset_list(path):
     df = pd.read_csv(path, names=["synset"], encoding="utf-8", header=1)
@@ -41,7 +50,8 @@ DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
+#IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "train2014")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
@@ -67,5 +77,9 @@ for synset in synsets:
     for imagenet_image in image_names:
         load_image_cache(image_cache, imagenet_image, IMAGENET_DIR)
     
-    print(image_cache)
-    sys.exit()
+
+with open(os.path.join(DATA_DIR, 'imagenet_vectors.bin'), 'wb') as handle:
+    pickle.dump(image_cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+logger.info("Finalizado com sucesso.")
