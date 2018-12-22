@@ -50,8 +50,8 @@ DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-#IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
+#IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "train2014")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
@@ -78,8 +78,14 @@ for synset in synsets:
         load_image_cache(image_cache, imagenet_image, IMAGENET_DIR)
     
 
-with open(os.path.join(DATA_DIR, 'imagenet_vectors.bin'), 'wb') as handle:
-    pickle.dump(image_cache, handle, protocol=pickle.HIGHEST_PROTOCOL)
+fvec = open(vector_file, "w")
+for i, value in image_cache.items():
+    if num_vecs % 1000 == 0:
+            print("{:d} vectors generated".format(num_vecs))
+    image_vector = ",".join(["{:.5e}".format(v) for v in image_cache[i].tolist()])
+    fvec.write("{:s}\t{:s}\n".format(image_batch[i], image_cache))
+    num_vecs += 1
+print("{:d} vectors generated".format(num_vecs))
 
 
 logger.info("Finalizado com sucesso.")
