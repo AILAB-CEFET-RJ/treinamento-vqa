@@ -38,14 +38,10 @@ def tac():
     (t_hour,t_min) = divmod(t_min,60) 
     logger.info('Time passed: {}hour:{}min:{}sec'.format(t_hour,t_min,t_sec))
 
-def carregar_pares(vqa_file, synset_dir):
+def gerar_pares_imagens(vqa_file, imagenet_filenames):
     image_pairs = []
-    synset_path = os.path.join(IMAGENET_DIR, synset_dir)
-    if os.path.isdir(synset_path):
-        for imagenet_file in os.listdir(synset_path):
-            image_pairs.append( [vqa_file, os.path.join(synset_dir, imagenet_file)])
-    else:
-        logger.debug("%s nao existe", synset_path)        
+    for imagenet_file in imagenet_filenames:
+        image_pairs.append([vqa_file, os.path.join(synset_dir, imagenet_file)])    
     return image_pairs
 
 #################################################################
@@ -58,8 +54,7 @@ def load_image_cache(image_cache, image_filename, directory):
         image_cache[image_filename] = image
     except Exception as e:
         logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
-        logger.error(e)
-        sys.exit()        
+        logger.error(e)       
 ################################################################
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
@@ -81,25 +76,22 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
                     X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
                     X2[i] = datagens[1].random_transform(image_cache[image_filename_r])
             yield [X1, X2]
+
 ################################################################
-def predizer(model):        
-    ytest_ = []
-    test_pair_gen = pair_generator(pairs_data, image_cache, None, BATCH_SIZE)    
-    num_test_steps = len(pairs_data) // BATCH_SIZE
-    curr_test_steps = 0
-    
-    logger.debug( "NUM STEPS PER BATCH : %d",  num_test_steps)
-    logger.debug( "BATCH SIZE : %d",  BATCH_SIZE)
+def obter_nome_arquivos_imagenet(synset_list):
+    imagenet_data = []
+    for synset in synsets:        
+        logger.info("carregando o synset [%s]", synset[0])
+        synset_path = os.path.join(IMAGENET_DIR, synset[0])
         
-    for [X1test, X2test] in test_pair_gen:
-        if curr_test_steps >= num_test_steps:
-            break        
-        y = model.predict([X1test, X2test])      
-        #ytest_.extend(np.argmax(y, axis=1).tolist())
-        #retornando o score ao inves da similaridade
-        ytest_.extend([y[0,1]])
-        curr_test_steps += 1                
-    return ytest_
+        if os.path.isdir(synset_path):
+            for imagenet_file in os.listdir(synset_path):
+                imagenet_data.append(os.path.join(synset[0], imagenet_file))
+                load_image_cache(image_cache, os.path.join(synset[0], imagenet_file), IMAGENET_DIR)  
+        else:
+            logger.warn("%s nao existe", synset_path) 
+    return imagenet_data        
+
 ################################################################
 def load_synset_list(path):
     df = pd.read_csv(path, names=["synset"], encoding="utf-8", header=1)
@@ -114,8 +106,8 @@ DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation3-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-#IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
+#IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 
 logger.debug("DATA_DIR %s", DATA_DIR)
@@ -126,8 +118,6 @@ logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 logger.debug("IMAGENET_DIR %s", IMAGENET_DIR)
 logger.debug("VQA_DIR %s", VQA_DIR)
 
-tic()
-
 logger.info("Carregando o modelo")
 model = load_model(FINAL_MODEL_FILE)
 logger.info("Modelo carregado com sucesso")
@@ -135,63 +125,51 @@ logger.info("Modelo carregado com sucesso")
 logger.debug( "Carregando pares de imagens...")
 
 synsets = load_synset_list(os.path.join(DATA_DIR, "synsets_dog_cat.csv"))
+#synsets = [["n02121808"],["n02124075"],["n02123394"],["n02122298"],["n02122810"]]
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
+tic()
+image_cache = {}
+imagenet_filename = obter_nome_arquivos_imagenet(synsets)
+tac()
+
+print("image_cache", len(image_cache))
+print("imagenet_filename", len(imagenet_filename))
+sys.exit()
+
 #for vqa_file in os.listdir(VQA_DIR):
-for filename in vqa_filenames_list:    
+for filename in vqa_filenames_list:  
     vqa_file = filename[0]
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
+    BATCH_SIZE = 16
     
-    #for synset_dir in os.listdir(IMAGENET_DIR):
-    for synset in synsets:
-        synset_dir = synset[0]
-        logger.info("processando o synset [%s]", synset_dir)
-        pairs_data = carregar_pares(vqa_file, synset_dir)
-        num_pairs = len(pairs_data)
+    tic()  # Marca o tempo de inicio da execucao
+    
+    pairs_data = gerar_pares_imagens(vqa_file, synset_dir)
+    num_pairs = len(pairs_data)
+    logger.debug( "Numero de pares : %d",  num_pairs)
+    sys.exit()
+    
+    STEPS = num_pairs // BATCH_SIZE
+    
+    logger.info("Predizendo similaridades...")        
+    predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS, workers=4, use_multiprocessing=True)
 
-        logger.debug( "Numero de pares : %d",  num_pairs)
-        
-        if num_pairs == 0:
-            continue
+    i = 0      
+    for y in predicoes:            
+        if(np.argmax(y, axis=0) == 1):
+            pairs_data[i].extend([y[1]])
+            similarities.append( pairs_data[i] )          
+        i = i + 1
 
-        image_cache = {}
+    logger.info("Salvando as predicoes...")
+    predict_filename = "predicoes_{:s}.csv".format(vqa_file)        
 
-        logger.info( "carregando imagens...")
-        valid_pairs = []
-        
-        for i, (image_filename_l, image_filename_r) in enumerate(pairs_data):        
-            if image_filename_l not in image_cache:
-                load_image_cache(image_cache, image_filename_l, VQA_DIR)
-            if image_filename_r not in image_cache:        
-                load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)        
-            
-        #test_pair_gen = pair_generator(pairs_data, image_cache, None, None)
-        logger.debug("pronto")
-        BATCH_SIZE = 16
-        STEPS = num_pairs // BATCH_SIZE
-        
-        logger.info("Predizendo similaridades...")
-        #predicoes = model.predict(np.array(pairs_data), batch_size=BATCH_SIZE, verbose=1)        
-        predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS)
+    df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similarity"])
+    df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
+    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
+    tac() # Marca o tempo de fim da execucao
 
-        print(len(predicoes))
-
-        i = 0      
-        for y in predicoes:            
-            if(np.argmax(y, axis=0) == 1):
-               pairs_data[i].extend([y[1]])
-               similarities.append( pairs_data[i] )          
-            i = i + 1
-
-        logger.info("Salvando as predicoes...")
-        predict_filename = "predicoes_{:s}.csv".format(vqa_file)
-        #predict_filename = "predicoes_distilation_2.csv"
-
-        df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similarity"])
-        df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
-        logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename)) 
-
-tac()
 logger.info("Finalizado !!!")
