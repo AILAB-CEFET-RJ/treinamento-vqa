@@ -26,8 +26,6 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
-
-
 def tic():
     global _start_time 
     _start_time = time.time()
@@ -94,7 +92,7 @@ def obter_nome_arquivos_imagenet(synset_list):
 
 ################################################################
 def load_synset_list(path):
-    df = pd.read_csv(path, names=["synset"], encoding="utf-8", header=1)
+    df = pd.read_csv(path, encoding="utf-8", sep=' ', usecols=[0])
     return df.values
 ################################################################
 def load_vqa_filenames_list(path):
@@ -110,6 +108,7 @@ IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC
 #IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 
+
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
@@ -124,18 +123,20 @@ logger.info("Modelo carregado com sucesso")
 
 logger.debug( "Carregando pares de imagens...")
 
-synsets = load_synset_list(os.path.join(DATA_DIR, "synsets_dog_cat.csv"))
+
+
+synsets = load_synset_list(os.path.join(DATA_DIR, "LOC_synset_mapping.txt"))
+# Apenas os N primeiros synsets
+synsets = synsets[0:50]
+
 #synsets = [["n02121808"],["n02124075"],["n02123394"],["n02122298"],["n02122810"]]
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
+
 
 tic()
 image_cache = {}
 imagenet_filename = obter_nome_arquivos_imagenet(synsets)
 tac()
-
-print("image_cache", len(image_cache))
-print("imagenet_filename", len(imagenet_filename))
-sys.exit()
 
 #for vqa_file in os.listdir(VQA_DIR):
 for filename in vqa_filenames_list:  
