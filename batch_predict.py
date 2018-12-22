@@ -39,7 +39,7 @@ def tac():
 def gerar_pares_imagens(vqa_file, imagenet_filenames):
     image_pairs = []
     for imagenet_file in imagenet_filenames:
-        image_pairs.append([vqa_file, os.path.join(synset_dir, imagenet_file)])    
+        image_pairs.append([vqa_file, imagenet_file])    
     return image_pairs
 
 #################################################################
@@ -144,19 +144,18 @@ for filename in vqa_filenames_list:
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
-    BATCH_SIZE = 16
+    BATCH_SIZE = 256
     
     tic()  # Marca o tempo de inicio da execucao
     
-    pairs_data = gerar_pares_imagens(vqa_file, synset_dir)
+    pairs_data = gerar_pares_imagens(vqa_file, imagenet_filename)
     num_pairs = len(pairs_data)
     logger.debug( "Numero de pares : %d",  num_pairs)
-    sys.exit()
-    
+        
     STEPS = num_pairs // BATCH_SIZE
     
     logger.info("Predizendo similaridades...")        
-    predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS, workers=4, use_multiprocessing=True)
+    predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, workers=4, use_multiprocessing=True)
 
     i = 0      
     for y in predicoes:            
