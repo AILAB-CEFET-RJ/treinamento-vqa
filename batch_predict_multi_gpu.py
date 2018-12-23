@@ -107,7 +107,7 @@ IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
 #IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
-BATCH_SIZE=64
+BATCH_SIZE=128
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -118,7 +118,13 @@ logger.debug("IMAGENET_DIR %s", IMAGENET_DIR)
 logger.debug("VQA_DIR %s", VQA_DIR)
 
 logger.info("Carregando o modelo")
-model = load_model(FINAL_MODEL_FILE)
+
+with tf.device("/cpu:0"):
+    model = load_model(FINAL_MODEL_FILE)
+
+logger.info("Paralelizando o modelo em 2 GPUs")
+model = multi_gpu_model(model, gpus=2)
+
 logger.info("Modelo carregado com sucesso")
 
 logger.debug( "Carregando pares de imagens...")
