@@ -39,7 +39,7 @@ def tac():
 def gerar_pares_imagens(vqa_file, imagenet_filenames):
     image_pairs = []
     for imagenet_file in imagenet_filenames:
-        image_pairs.append([vqa_file, os.path.join(synset_dir, imagenet_file)])    
+        image_pairs.append([vqa_file, imagenet_file])    
     return image_pairs
 
 #################################################################
@@ -107,7 +107,7 @@ IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
 #IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
-
+BATCH_SIZE=64
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -142,35 +142,38 @@ tac()
 for filename in vqa_filenames_list:  
     vqa_file = filename[0]
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
+
+    load_image_cache(image_cache, vqa_file, VQA_DIR)
+
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
-    BATCH_SIZE = 16
     
     tic()  # Marca o tempo de inicio da execucao
     
-    pairs_data = gerar_pares_imagens(vqa_file, synset_dir)
+    pairs_data = gerar_pares_imagens(vqa_file, imagenet_filename)
     num_pairs = len(pairs_data)
     logger.debug( "Numero de pares : %d",  num_pairs)
-    sys.exit()
     
     STEPS = num_pairs // BATCH_SIZE
     
     logger.info("Predizendo similaridades...")        
-    predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS, workers=4, use_multiprocessing=True)
-
+    predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS)
+    logger.info("pronto")
+    logger.info("preparando para salvar arquivo")
     i = 0      
     for y in predicoes:            
-        if(np.argmax(y, axis=0) == 1):
-            pairs_data[i].extend([y[1]])
-            similarities.append( pairs_data[i] )          
+        pairs_data[i].extend([y[1]])
+        similarities.append( pairs_data[i] )          
         i = i + 1
-
+    
+    logger.info("pronto")
     logger.info("Salvando as predicoes...")
     predict_filename = "predicoes_{:s}.csv".format(vqa_file)        
 
     df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similarity"])
     df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
     logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
+    del image_cache[vqa_file]
     tac() # Marca o tempo de fim da execucao
 
 logger.info("Finalizado !!!")
