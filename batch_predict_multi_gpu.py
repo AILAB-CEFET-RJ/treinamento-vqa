@@ -15,6 +15,8 @@ from keras.applications import inception_v3
 from keras.models import Model, load_model
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import accuracy_score, confusion_matrix
+import tensorflow as tf
+from keras.utils.training_utils import multi_gpu_model
 #################################################################
 #               Configurando logs de execucao                   #
 #################################################################
