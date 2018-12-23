@@ -159,7 +159,6 @@ for filename in vqa_filenames_list:
     logger.info("Predizendo similaridades...")        
     predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS)
     logger.info("pronto")
-    logger.info("preparando para salvar arquivo")
     i = 0      
     for y in predicoes:            
         pairs_data[i].extend([y[1]])
