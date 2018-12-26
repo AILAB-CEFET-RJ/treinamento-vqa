@@ -161,7 +161,6 @@ logger.info("Predizendo similaridades...")
 predicoes = model.predict_generator(generator, verbose=1, steps=num_steps, max_queue_size=10, workers=3, use_multiprocessing=False)
 logger.info("pronto")
 
-sys.exit()
 ################################################################
 logger.debug("gerando dados de predicao")
 i = 0      
@@ -175,7 +174,7 @@ logger.info("Salvando as predicoes...")
 predict_filename = "teste_predicoes.csv".format() 
 
 df = pd.DataFrame(similarities, columns=["imagenet", "similarity"])
-df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
+df.to_hdf(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', key="data" )
 logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
 ################################################################
 logger.info("Finalizado !!!")
