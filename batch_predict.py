@@ -120,7 +120,7 @@ IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
 #IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
-BATCH_SIZE = 192
+BATCH_SIZE = 128
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -140,7 +140,7 @@ synsets = load_synset_list(os.path.join(DATA_DIR, "LOC_synset_mapping.txt"))
 
 # Apenas os N synsets 
 OFFSET_SYNSET = 0
-NB_SYNSETS = 10
+NB_SYNSETS = 20
 
 synsets = synsets[OFFSET_SYNSET:NB_SYNSETS]
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
@@ -155,14 +155,14 @@ for filename in vqa_filenames_list:
     vqa_file = filename[0]
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
 
-     if os.path.exists("predicoes_{:s}.csv".format(vqa_file)):
-         continue
+    if os.path.exists( os.path.join(DATA_DIR, "predicoes", "predicoes_{:s}.csv".format(vqa_file))):
+        logger.debug("pulando %s", "predicoes_{:s}.csv".format(vqa_file))
+        continue
 
     load_image_cache(image_cache, vqa_file, VQA_DIR)
 
     logger.info("processando a imagem [%s]", vqa_image_path)
     similarities = []
-    
     tic()  # Marca o tempo de inicio da execucao
     
     pairs_data = gerar_pares_imagens(vqa_file, imagenet_filename)
