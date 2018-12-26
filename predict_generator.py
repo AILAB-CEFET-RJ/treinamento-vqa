@@ -41,7 +41,7 @@ def pair_generator(triples, image_cache, datagens, batch_size=32):
             X1 = np.zeros((batch_size, 299, 299, 3))
             X2 = np.zeros((batch_size, 299, 299, 3))
             Y = np.zeros((batch_size, 2))
-            for i, (image_filename_l, image_filename_r, label) in enumerate(batch):
+            for i, (image_filename_l, image_filename_r) in enumerate(batch):
                 try:
                     if datagens is None or len(datagens) == 0:
                         X1[i] = image_cache[image_filename_l]
@@ -100,7 +100,7 @@ FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","incept
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+#IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 BATCH_SIZE = 128
 
@@ -133,9 +133,6 @@ triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
 num_pairs = len(triples_data)
 logger.info("num pares %s", num_pairs)
 
-[x for x in triples_data[0:5]]
-sys.exit()
-
 ################################################################
 for i, (image_filename_l, image_filename_r) in enumerate(triples_data):
     if i % 10000 == 0:
@@ -153,19 +150,18 @@ datagen_args = dict(rotation_range=10,
                     zoom_range=0.2)
 datagens = [ImageDataGenerator(**datagen_args),
             ImageDataGenerator(**datagen_args)]
-pair_gen = pair_generator(triples_data, image_cache, datagens, BATCH_SIZE)
-[X1, X2] = pair_gen.__next__()
+generator = pair_generator(triples_data, image_cache, datagens, BATCH_SIZE)
+
 ################################################################
 
 num_steps = len(triples_data) // BATCH_SIZE
 logger.debug("passos por epoca %d", num_steps)
 
-sys.exit()
-
 logger.info("Predizendo similaridades...")        
-predicoes = model.predict_generator(generator, verbose=1, steps=STEPS, max_queue_size=10, workers=3, use_multiprocessing=False)
+predicoes = model.predict_generator(generator, verbose=1, steps=num_steps, max_queue_size=10, workers=3, use_multiprocessing=False)
 logger.info("pronto")
 
+sys.exit()
 ################################################################
 logger.debug("gerando dados de predicao")
 i = 0      
