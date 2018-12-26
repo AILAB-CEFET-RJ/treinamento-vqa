@@ -155,6 +155,9 @@ for filename in vqa_filenames_list:
     vqa_file = filename[0]
     vqa_image_path = os.path.join(VQA_DIR,vqa_file)
 
+     if os.path.exists("predicoes_{:s}.csv".format(vqa_file)):
+         continue
+
     load_image_cache(image_cache, vqa_file, VQA_DIR)
 
     logger.info("processando a imagem [%s]", vqa_image_path)
