@@ -57,8 +57,8 @@ def carregar_triplas(lista_triplas):
     image_triples = pd.read_csv(lista_triplas, sep=",", header=0, names=["left","right","similar"])
     return image_triples.values
 #################################################################
-def load_image_cache(image_cache, image_filename):
-    image = plt.imread(os.path.join(IMAGE_DIR, image_filename))
+def load_image_cache(image_cache, image_filename, directory):
+    image = plt.imread(os.path.join(directory, image_filename))
     image = imresize(image, (299, 299))
     image = image.astype("float32")
     image = inception_v3.preprocess_input(image)
@@ -91,7 +91,7 @@ logger.info("Modelo carregado com sucesso")
 ################################################################
 logger.debug( "Carregando pares de imagens...")
 image_cache = {}
-triples_data = 
+triples_data = carregar_triplas(TRIPLES_FILE)
 num_pairs = len(triples_data)
 logger.info("num pares %s", num_pairs)
 ################################################################
@@ -99,9 +99,9 @@ for i, (image_filename_l, image_filename_r, _) in enumerate(triples_data):
     if i % 10000 == 0:
         logger.info("images from {:d}/{:d} pairs loaded to cache".format(i, num_pairs))
     if image_filename_l not in image_cache:
-        load_image_cache(image_cache, image_filename_l)
+        load_image_cache(image_cache, image_filename_l, VQA_DIR)
     if image_filename_r not in image_cache:
-        load_image_cache(image_cache, image_filename_r)
+        load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
 logger.info("images from {:d}/{:d} pairs loaded to cache, COMPLETE".format(i, num_pairs))
 ################################################################
 datagen_args = dict(rotation_range=10,
