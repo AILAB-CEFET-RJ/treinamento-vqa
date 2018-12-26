@@ -181,7 +181,7 @@ for filename in vqa_filenames_list:
         #pairs_data[i].extend([y[1]])
         #similarities.append( pairs_data[i] )
         _,imagenet_name = os.path.split(pairs_data[i][1])
-        similarities.append([imagenet_name, [y[1]]])
+        similarities.append([imagenet_name, y[1]])
         i = i + 1
     logger.debug("pronto")
     
