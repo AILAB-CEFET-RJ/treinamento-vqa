@@ -133,6 +133,9 @@ triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
 num_pairs = len(triples_data)
 logger.info("num pares %s", num_pairs)
 
+[x for x in triples_data[0:5]]
+sys.exit()
+
 ################################################################
 for i, (image_filename_l, image_filename_r) in enumerate(triples_data):
     if i % 10000 == 0:
