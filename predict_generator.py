@@ -1,5 +1,8 @@
 import os
 
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
 from keras import backend as K
 from keras.applications import inception_v3
 from keras.layers import Input, merge
@@ -63,12 +66,14 @@ def obter_nome_arquivos_imagenet(synset_list):
         
         if os.path.isdir(synset_path):
             for imagenet_file in os.listdir(synset_path):
-                imagenet_data.append(os.path.join(synset[0], imagenet_file))
-                load_image_cache(image_cache, os.path.join(synset[0], imagenet_file), IMAGENET_DIR)  
+                imagenet_data.append(os.path.join(synset[0], imagenet_file))                
         else:
             logger.warn("%s nao existe", synset_path) 
     return imagenet_data        
-
+################################################################
+def load_vqa_filenames_list(path):
+    df = pd.read_csv(path, names=["filename"], encoding="utf-8", header=1)
+    return df.values
 #################################################################
 def load_image_cache(image_cache, image_filename, directory):
     image = plt.imread(os.path.join(directory, image_filename))
@@ -84,7 +89,10 @@ def gerar_triplas(vqa_list, imagenet_list):
         for imagenet_img in imagenet_list:
             triples.append([vqa_img, imagenet_img])
     return triples
-
+################################################################
+def load_synset_list(path):
+    df = pd.read_csv(path, encoding="utf-8", sep=' ', usecols=[0])
+    return df.values
 #################################################################
 DATA_DIR = os.environ["DATA_DIR"]
 #FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
