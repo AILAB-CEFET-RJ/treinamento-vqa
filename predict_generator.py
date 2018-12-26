@@ -2,7 +2,7 @@ import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
+import sys
 from keras import backend as K
 from keras.applications import inception_v3
 from keras.layers import Input, merge
@@ -100,7 +100,7 @@ FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","incept
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
-#IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
+IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 BATCH_SIZE = 128
 
@@ -132,8 +132,9 @@ triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
 
 num_pairs = len(triples_data)
 logger.info("num pares %s", num_pairs)
+
 ################################################################
-for i, (image_filename_l, image_filename_r, _) in enumerate(triples_data):
+for i, (image_filename_l, image_filename_r) in enumerate(triples_data):
     if i % 10000 == 0:
         logger.info("images from {:d}/{:d} pairs loaded to cache".format(i, num_pairs))
     if image_filename_l not in image_cache:
@@ -141,6 +142,7 @@ for i, (image_filename_l, image_filename_r, _) in enumerate(triples_data):
     if image_filename_r not in image_cache:
         load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
 logger.info("images from {:d}/{:d} pairs loaded to cache, COMPLETE".format(i, num_pairs))
+
 ################################################################
 datagen_args = dict(rotation_range=10,
                     width_shift_range=0.2,
@@ -154,6 +156,8 @@ pair_gen = pair_generator(triples_data, image_cache, datagens, BATCH_SIZE)
 
 num_steps = len(triples_data) // BATCH_SIZE
 logger.debug("passos por epoca %d", num_steps)
+
+sys.exit()
 
 logger.info("Predizendo similaridades...")        
 predicoes = model.predict_generator(generator, verbose=1, steps=STEPS, max_queue_size=10, workers=3, use_multiprocessing=False)
