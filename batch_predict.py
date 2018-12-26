@@ -15,6 +15,8 @@ from keras.applications import inception_v3
 from keras.models import Model, load_model
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import accuracy_score, confusion_matrix
+from util.ts_iterator import threadsafe_iter
+
 #################################################################
 #               Configurando logs de execucao                   #
 #################################################################
@@ -26,6 +28,7 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
+#################################################################
 def tic():
     global _start_time 
     _start_time = time.time()
@@ -35,7 +38,16 @@ def tac():
     (t_min, t_sec) = divmod(t_sec,60)
     (t_hour,t_min) = divmod(t_min,60) 
     logger.info('Time passed: {}hour:{}min:{}sec'.format(t_hour,t_min,t_sec))
+#################################################################
 
+def threadsafe_decorator(f):
+    """A decorator that takes a generator function and makes it thread-safe.
+    """
+    def g(*a, **kw):
+        return threadsafe_iter(f(*a, **kw))
+    return g
+
+#################################################################
 def gerar_pares_imagens(vqa_file, imagenet_filenames):
     image_pairs = []
     for imagenet_file in imagenet_filenames:
@@ -54,6 +66,7 @@ def load_image_cache(image_cache, image_filename, directory):
         logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
         logger.error(e)       
 ################################################################
+@threadsafe_decorator
 def pair_generator(triples, image_cache, datagens, batch_size=32):    
     while True:
         # shuffle once per batch
@@ -107,7 +120,7 @@ IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "ILSVRC", "Data", "DET", "train", "ILSVRC2013_train")
 #IMAGENET_DIR =  os.path.join(IMAGE_DIR, "ILSVRC2013_train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
-BATCH_SIZE=64
+BATCH_SIZE = 192
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("FINAL_MODEL_FILE %s", FINAL_MODEL_FILE)
@@ -124,12 +137,13 @@ logger.info("Modelo carregado com sucesso")
 logger.debug( "Carregando pares de imagens...")
 
 synsets = load_synset_list(os.path.join(DATA_DIR, "LOC_synset_mapping.txt"))
-# Apenas os N primeiros synsets
-synsets = synsets[0:50]
 
-#synsets = [["n02121808"],["n02124075"],["n02123394"],["n02122298"],["n02122810"]]
+# Apenas os N synsets 
+OFFSET_SYNSET = 0
+NB_SYNSETS = 10
+
+synsets = synsets[OFFSET_SYNSET:NB_SYNSETS]
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
-
 
 tic()
 image_cache = {}
@@ -154,20 +168,28 @@ for filename in vqa_filenames_list:
     
     STEPS = num_pairs // BATCH_SIZE
     
+    generator=pair_generator(pairs_data, image_cache, None, BATCH_SIZE)
+
     logger.info("Predizendo similaridades...")        
-    predicoes = model.predict_generator(pair_generator(pairs_data, image_cache, None, BATCH_SIZE), verbose=1, steps=STEPS)
+    predicoes = model.predict_generator(generator, verbose=1, steps=STEPS, max_queue_size=10, workers=3, use_multiprocessing=False)
     logger.info("pronto")
+
+    logger.debug("gerando dados de predicao")
+    
     i = 0      
     for y in predicoes:            
-        pairs_data[i].extend([y[1]])
-        similarities.append( pairs_data[i] )          
+        #pairs_data[i].extend([y[1]])
+        #similarities.append( pairs_data[i] )
+        _,imagenet_name = os.path.split(pairs_data[i][1])
+        similarities.append([imagenet_name, [y[1]]])
         i = i + 1
+    logger.debug("pronto")
     
-    logger.info("pronto")
     logger.info("Salvando as predicoes...")
-    predict_filename = "predicoes_{:s}.csv".format(vqa_file)        
-
-    df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similarity"])
+    predict_filename = "{:s}.csv".format(vqa_file)        
+    
+    #df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similarity"])
+    df = pd.DataFrame(similarities, columns=["imagenet", "similarity"])
     df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
     logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
     del image_cache[vqa_file]
