@@ -122,64 +122,62 @@ logger.debug( "Carregando pares de imagens...")
 synsets = os.listdir(IMAGENET_DIR)
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
-
 logger.debug("quantidade de synsets %s", len(synsets))
+logger.debug("synset %s", synset)
 
-for synset in synsets:
-    logger.debug("synset %s", synset)
-    imagenet_filenames_list = obter_nome_arquivos_imagenet([synset])
+imagenet_filenames_list = obter_nome_arquivos_imagenet(synsets)
 
-    if len(imagenet_filenames_list) == 0:
-        continue
+if len(imagenet_filenames_list) == 0:
+    continue
 
-    image_cache = {}
-    triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
+image_cache = {}
+triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
 
-    num_pairs = len(triples_data)
-    logger.info("num pares %s", num_pairs)
+num_pairs = len(triples_data)
+logger.info("num pares %s", num_pairs)
 
-    ################################################################
-    for i, (image_filename_l, image_filename_r) in enumerate(triples_data):
-        if i % 10000 == 0:
-            logger.info("images from {:d}/{:d} pairs loaded to cache".format(i, num_pairs))
-        if image_filename_l not in image_cache:
-            load_image_cache(image_cache, image_filename_l, VQA_DIR)
-        if image_filename_r not in image_cache:
-            load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
-    logger.info("images from {:d}/{:d} pairs loaded to cache, COMPLETE".format(i, num_pairs))
-    sys.exit()
-    ################################################################
-    datagen_args = dict(rotation_range=10,
-                        width_shift_range=0.2,
-                        height_shift_range=0.2,
-                        zoom_range=0.2)
-    datagens = [ImageDataGenerator(**datagen_args),
-                ImageDataGenerator(**datagen_args)]
-    generator = pair_generator(triples_data, image_cache, datagens, BATCH_SIZE)
+################################################################
+for i, (image_filename_l, image_filename_r) in enumerate(triples_data):
+    if i % 10000 == 0:
+        logger.info("images from {:d}/{:d} pairs loaded to cache".format(i, num_pairs))
+    if image_filename_l not in image_cache:
+        load_image_cache(image_cache, image_filename_l, VQA_DIR)
+    if image_filename_r not in image_cache:
+        load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
+logger.info("images from {:d}/{:d} pairs loaded to cache, COMPLETE".format(i, num_pairs))
 
-    ################################################################
+################################################################
+datagen_args = dict(rotation_range=10,
+                    width_shift_range=0.2,
+                    height_shift_range=0.2,
+                    zoom_range=0.2)
+datagens = [ImageDataGenerator(**datagen_args),
+            ImageDataGenerator(**datagen_args)]
+generator = pair_generator(triples_data, image_cache, datagens, BATCH_SIZE)
 
-    num_steps = len(triples_data) // BATCH_SIZE
-    logger.debug("passos por epoca %d", num_steps)
+################################################################
 
-    logger.info("Predizendo similaridades...")        
-    predicoes = model.predict_generator(generator, verbose=1, steps=num_steps, max_queue_size=10, workers=3, use_multiprocessing=False)
-    logger.info("pronto")
+num_steps = len(triples_data) // BATCH_SIZE
+logger.debug("passos por epoca %d", num_steps)
 
-    ################################################################
-    logger.debug("gerando dados de predicao")
-    i = 0      
-    for y in predicoes:
-        _,imagenet_name = os.path.split(pairs_data[i][1])
-        similarities.append([imagenet_name, y[1]])
-        i = i + 1
-    logger.debug("pronto")
-    ################################################################
-    logger.info("Salvando as predicoes...")
-    predict_filename = "{}_predicoes.csv".format(synset) 
+logger.info("Predizendo similaridades...")        
+predicoes = model.predict_generator(generator, verbose=1, steps=num_steps, max_queue_size=10, workers=3, use_multiprocessing=False)
+logger.info("pronto")
 
-    df = pd.DataFrame(similarities, columns=["imagenet", "similarity"])
-    df.to_hdf(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', key="data" )
-    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
-    ################################################################
+################################################################
+logger.debug("gerando dados de predicao")
+i = 0      
+for y in predicoes:
+    _,imagenet_name = os.path.split(pairs_data[i][1])
+    similarities.append([imagenet_name, y[1]])
+    i = i + 1
+logger.debug("pronto")
+################################################################
+logger.info("Salvando as predicoes...")
+predict_filename = "{}_predicoes.csv".format(synset) 
+
+df = pd.DataFrame(similarities, columns=["imagenet", "similarity"])
+df.to_hdf(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', key="data" )
+logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
+################################################################
 logger.info("Finalizado !!!")
