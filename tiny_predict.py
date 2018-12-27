@@ -62,11 +62,11 @@ def obter_nome_arquivos_imagenet(synset_list):
     imagenet_data = []
     for synset in synset_list:        
         logger.info("carregando o synset [%s]", synset)
-        synset_path = os.path.join(IMAGENET_DIR, "train", synset, "images")
+        synset_path = os.path.join(IMAGENET_DIR, synset, "images")
         
         if os.path.isdir(synset_path):
             for imagenet_file in os.listdir(synset_path):
-                imagenet_data.append(os.path.join(synset[0], imagenet_file))                
+                imagenet_data.append(os.path.join(synset, "images",imagenet_file))                
         else:
             logger.warn("%s nao existe", synset_path) 
     return imagenet_data        
@@ -99,7 +99,7 @@ DATA_DIR = os.environ["DATA_DIR"]
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation3-ft-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
-IMAGENET_DIR = os.path.join(IMAGE_DIR, "tiny-imagenet-200")
+IMAGENET_DIR = os.path.join(IMAGE_DIR, "tiny-imagenet-200", "train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
 BATCH_SIZE = 128
 TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_4.csv") 
@@ -114,12 +114,12 @@ logger.debug("VQA_DIR %s", VQA_DIR)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 ################################################################
 logger.info("Carregando o modelo")
-model = load_model(FINAL_MODEL_FILE)
+#model = load_model(FINAL_MODEL_FILE)
 logger.info("Modelo carregado com sucesso")
 ################################################################
 logger.debug( "Carregando pares de imagens...")
 
-synsets = os.listdir(VQA_DIR)
+synsets = os.listdir(IMAGENET_DIR)
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
 
@@ -147,7 +147,7 @@ for synset in synsets:
         if image_filename_r not in image_cache:
             load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
     logger.info("images from {:d}/{:d} pairs loaded to cache, COMPLETE".format(i, num_pairs))
-
+    sys.exit()
     ################################################################
     datagen_args = dict(rotation_range=10,
                         width_shift_range=0.2,
