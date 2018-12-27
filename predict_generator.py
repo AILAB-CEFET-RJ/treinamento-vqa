@@ -60,7 +60,7 @@ def carregar_triplas(lista_triplas):
 #################################################################
 def obter_nome_arquivos_imagenet(synset_list):
     imagenet_data = []
-    for synset in synsets:        
+    for synset in synset_list:        
         logger.info("carregando o synset [%s]", synset[0])
         synset_path = os.path.join(IMAGENET_DIR, synset[0])
         
@@ -122,11 +122,15 @@ logger.info("Modelo carregado com sucesso")
 logger.debug( "Carregando pares de imagens...")
 
 synsets = load_synset_list(os.path.join(DATA_DIR, "LOC_synset_mapping.txt"))
-
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
 for synset in synsets:
+    logger.debug("synset %s", synset)
     imagenet_filenames_list = obter_nome_arquivos_imagenet([synset])
+
+    if len(imagenet_filenames_list) == 0:
+        continue
+
     image_cache = {}
     triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
 
