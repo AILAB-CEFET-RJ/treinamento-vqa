@@ -114,21 +114,18 @@ logger.debug("VQA_DIR %s", VQA_DIR)
 logger.debug("TRIPLES_FILE %s", TRIPLES_FILE)
 ################################################################
 logger.info("Carregando o modelo")
-#model = load_model(FINAL_MODEL_FILE)
+model = load_model(FINAL_MODEL_FILE)
 logger.info("Modelo carregado com sucesso")
 ################################################################
 logger.debug( "Carregando pares de imagens...")
 
 synsets = os.listdir(IMAGENET_DIR)
+synsets = synsets[0:50]
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
 logger.debug("quantidade de synsets %s", len(synsets))
-logger.debug("synset %s", synset)
 
 imagenet_filenames_list = obter_nome_arquivos_imagenet(synsets)
-
-if len(imagenet_filenames_list) == 0:
-    continue
 
 image_cache = {}
 triples_data = gerar_triplas(vqa_filenames_list, imagenet_filenames_list)
