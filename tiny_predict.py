@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import logging
+from util.ts_iterator import threadsafe_iter
 
 #################################################################
 #               Configurando logs de execucao                   #
@@ -30,6 +31,14 @@ logging.basicConfig(level=logging.DEBUG,
                     filemode='w')
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
+#################################################################
+def threadsafe_decorator(f):
+    """A decorator that takes a generator function and makes it thread-safe.
+    """
+    def g(*a, **kw):
+        return threadsafe_iter(f(*a, **kw))
+    return g
+
 #################################################################
 def pair_generator(triples, image_cache, datagens, batch_size=32):
     while True:        
