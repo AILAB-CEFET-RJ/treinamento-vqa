@@ -26,7 +26,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='logs/predict_generator.log',
+                    filename='logs/tiny_predict.log',
                     filemode='w')
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
