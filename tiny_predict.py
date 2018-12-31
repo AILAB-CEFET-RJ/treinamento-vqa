@@ -85,11 +85,15 @@ def load_vqa_filenames_list(path):
     return df.values
 #################################################################
 def load_image_cache(image_cache, image_filename, directory):
-    image = plt.imread(os.path.join(directory, image_filename))
-    image = imresize(image, (299, 299))
-    image = image.astype("float32")
-    image = inception_v3.preprocess_input(image)
-    image_cache[image_filename] = image
+    try:
+        image = Image.open(os.path.join(directory, image_filename)).convert("RGB")
+        image = imresize(image, (299, 299))
+        image = image.astype("float32")
+        image = inception_v3.preprocess_input(image)
+        image_cache[image_filename] = image
+    except Exception as e:
+        logger.warn("Falha ao ler o arquivo [%s]", os.path.join(directory, image_filename))
+        logger.error(e)   
 ################################################################
 def gerar_triplas(vqa_list, imagenet_list):
     triples = []
@@ -169,12 +173,12 @@ logger.debug("passos por epoca %d", num_steps)
 logger.info("Predizendo similaridades...")        
 predicoes = model.predict_generator(generator, verbose=1, steps=num_steps, max_queue_size=10, workers=3, use_multiprocessing=False)
 logger.info("pronto")
-
+similarities = []
 ################################################################
 logger.debug("gerando dados de predicao")
 i = 0      
 for y in predicoes:
-    _,imagenet_name = os.path.split(pairs_data[i][1])
+    _,imagenet_name = os.path.split(triples_data[i][1])
     similarities.append([imagenet_name, y[1]])
     i = i + 1
 logger.debug("pronto")
