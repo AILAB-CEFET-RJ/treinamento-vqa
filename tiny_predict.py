@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 import logging
 from util.ts_iterator import threadsafe_iter
+from PIL import Image
 
 #################################################################
 #               Configurando logs de execucao                   #
