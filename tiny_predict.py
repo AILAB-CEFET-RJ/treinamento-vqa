@@ -134,7 +134,7 @@ logger.info("Modelo carregado com sucesso")
 logger.debug( "Carregando pares de imagens...")
 
 synsets = os.listdir(IMAGENET_DIR)
-synsets = synsets[0:50]
+synsets = synsets[0:1]
 vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
 logger.debug("quantidade de synsets %s", len(synsets))
@@ -185,7 +185,7 @@ for y in predicoes:
 logger.debug("pronto")
 ################################################################
 logger.info("Salvando as predicoes...")
-predict_filename = "{}_predicoes.csv".format(synset) 
+predict_filename = "tiny_imagenet_predicoes.csv"
 
 df = pd.DataFrame(similarities, columns=["imagenet", "similarity"])
 df.to_hdf(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', key="data" )
