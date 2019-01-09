@@ -15,7 +15,8 @@ from scipy.misc import imresize
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
+from keras.utils.generic_utils import CustomObjectScope
+from keras.applications.mobilenet import relu6, DepthwiseConv2D
 
 #################################################################
 #               Configurando logs de execucao                   #
@@ -97,6 +98,15 @@ def evaluate_model(model):
     cm = confusion_matrix(ytest, ytest_)
     return acc, cm
 
+def convert(model_file):
+    with CustomObjectScope({'relu6': keras.applications.mobilenet.relu6,
+                            'DepthwiseConv2D': keras.applications.mobilenet.DepthwiseConv2D}):
+        model = k.convert("temp.h5",
+                          input_names=['input'],
+                          output_names=['output'],
+                          model_precision='float16')
+        return model
+
 #################################################################
 #                     Inicio da Execucao                        #
 #################################################################
@@ -177,7 +187,7 @@ logger.info(" ####### Inicio do treinamento ######")
 
 # Parametrizacao da Rede
 BATCH_SIZE = 128
-NUM_EPOCHS = 5 
+NUM_EPOCHS = 1 
 BEST_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "mobilenet-distilation", BEST_MODEL_FILENAME)
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "mobilenet-distilation", FINAL_MODEL_FILENAME)
 
@@ -249,18 +259,20 @@ model.save(FINAL_MODEL_FILE, overwrite=True)
 
 
 logger.info("==== Avaliando Resultados: Modelo final sobre o conjunto de dados ====")
-final_model = load_model(FINAL_MODEL_FILE)
-acc, cm = evaluate_model(final_model)
-logger.info("Precisao: {:.3f}".format(acc))
-logger.info("Matriz de Confusao")
-logger.info(cm)
+with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
+    final_model = load_model(FINAL_MODEL_FILE)
+    acc, cm = evaluate_model(final_model)
+    logger.info("Precisao: {:.3f}".format(acc))
+    logger.info("Matriz de Confusao")
+    logger.info(cm)
 
 logger.info("==== Avaliando Resultados: Melhor modelo sobre o conjunto de dados ====")
-best_model = load_model(BEST_MODEL_FILE)
-acc, cm = evaluate_model(best_model)
-logger.info("Precisao: {:.3f}".format(acc))
-logger.info("Matriz de Confusao")
-logger.info(cm)
+with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
+    best_model = load_model(BEST_MODEL_FILE)
+    acc, cm = evaluate_model(best_model)
+    logger.info("Precisao: {:.3f}".format(acc))
+    logger.info("Matriz de Confusao")
+    logger.info(cm)
 
 logger.info("Fim da execucao")
   
