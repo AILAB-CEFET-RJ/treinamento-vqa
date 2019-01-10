@@ -114,8 +114,8 @@ FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","incept
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "tiny-imagenet-200", "train")
-VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "convertidas")
-BATCH_SIZE = 96
+VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
+BATCH_SIZE = 256
 TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_4.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
