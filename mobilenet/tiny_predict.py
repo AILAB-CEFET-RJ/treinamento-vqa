@@ -41,10 +41,9 @@ def threadsafe_decorator(f):
     return g
 
 #################################################################
-def pair_generator(triples, image_cache, datagens, batch_size=32):
+def pair_generator(triples, image_cache, datagens, num_batch=32, indices):
     while True:        
-        indices = np.array( range(0, len(triples)-1))
-        num_batches = len(triples) // batch_size
+        
         for bid in range(num_batches):
             batch_indices = indices[bid * batch_size : (bid + 1) * batch_size]
             batch = [triples[i] for i in batch_indices]
@@ -116,7 +115,7 @@ TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv")
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "tiny-imagenet-200", "train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "convertidas")
-BATCH_SIZE = 128
+BATCH_SIZE = 96
 TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_4.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
@@ -161,19 +160,13 @@ with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
             load_image_cache(image_cache, image_filename_r, IMAGENET_DIR)
     logger.info("images from {:d}/{:d} pairs loaded to cache, COMPLETE".format(i, num_pairs))
 
-    ################################################################
-    datagen_args = dict(rotation_range=10,
-                        width_shift_range=0.2,
-                        height_shift_range=0.2,
-                        zoom_range=0.2)
-    datagens = [ImageDataGenerator(**datagen_args),
-                ImageDataGenerator(**datagen_args)]
-    generator = pair_generator(triples_data, image_cache, datagens, BATCH_SIZE)
-
-    ################################################################
-
+    ################################################################    
     num_steps = len(triples_data) // BATCH_SIZE
     logger.debug("passos por epoca %d", num_steps)
+
+    indices = np.array( range(0, len(triples)-1))
+    generator = pair_generator(triples_data, image_cache, None, num_steps, indices)
+    ################################################################
 
     logger.info("Predizendo similaridades...")        
     predicoes = model.predict_generator(generator, verbose=1, steps=num_steps, max_queue_size=10, workers=3, use_multiprocessing=False)
