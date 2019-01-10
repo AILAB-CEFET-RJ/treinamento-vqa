@@ -41,10 +41,9 @@ def threadsafe_decorator(f):
     return g
 
 #################################################################
-def pair_generator(triples, image_cache, datagens, num_batch=32, indices):
-    while True:        
-        
-        for bid in range(num_batches):
+def pair_generator(triples, image_cache, datagens, num_batch, indices):
+    while True:
+        for bid in range(num_batch):
             batch_indices = indices[bid * batch_size : (bid + 1) * batch_size]
             batch = [triples[i] for i in batch_indices]
             X1 = np.zeros((batch_size, 224, 224, 3))
