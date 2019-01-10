@@ -44,11 +44,11 @@ def threadsafe_decorator(f):
 def pair_generator(triples, image_cache, datagens, num_batch, indices):
     while True:
         for bid in range(num_batch):
-            batch_indices = indices[bid * batch_size : (bid + 1) * batch_size]
+            batch_indices = indices[bid * BATCH_SIZE : (bid + 1) * BATCH_SIZE]
             batch = [triples[i] for i in batch_indices]
-            X1 = np.zeros((batch_size, 224, 224, 3))
-            X2 = np.zeros((batch_size, 224, 224, 3))
-            Y = np.zeros((batch_size, 2))
+            X1 = np.zeros((BATCH_SIZE, 224, 224, 3))
+            X2 = np.zeros((BATCH_SIZE, 224, 224, 3))
+            Y = np.zeros((BATCH_SIZE, 2))
             for i, (image_filename_l, image_filename_r) in enumerate(batch):
                 try:
                     if datagens is None or len(datagens) == 0:
@@ -58,8 +58,7 @@ def pair_generator(triples, image_cache, datagens, num_batch, indices):
                         X1[i] = datagens[0].random_transform(image_cache[image_filename_l])
                         X2[i] = datagens[1].random_transform(image_cache[image_filename_r])                    
                 except Exception as e:
-                    logger.error("FALHA AO PROCESSAR L : %s - R : %s", image_filename_l, image_filename_r)                    
-                    sys.exit()
+                    logger.error("FALHA AO PROCESSAR L : %s - R : %s", image_filename_l, image_filename_r)                                        
                     continue
             yield [X1, X2]
 ################################################################            
@@ -109,7 +108,7 @@ def load_synset_list(path):
 #################################################################
 DATA_DIR = os.environ["DATA_DIR"]
 #FINAL_MODEL_FILE = os.path.join(DATA_DIR, "models", "inception-ft-best.h5")
-FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "distilation","inception-training-distlation3-ft-best.h5")
+FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "mobilenet-distilation","mobilenet-destilation-1-dot-best.h5")
 TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv") 
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "tiny-imagenet-200", "train")
