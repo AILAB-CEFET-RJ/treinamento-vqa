@@ -163,7 +163,7 @@ with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
     num_steps = len(triples_data) // BATCH_SIZE
     logger.debug("passos por epoca %d", num_steps)
 
-    indices = np.array( range(0, len(triples)-1))
+    indices = np.array( range(0, len(triples_data)-1))
     generator = pair_generator(triples_data, image_cache, None, num_steps, indices)
     ################################################################
 
