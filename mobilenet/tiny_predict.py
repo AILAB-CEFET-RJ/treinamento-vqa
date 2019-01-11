@@ -113,7 +113,7 @@ TRIPLES_FILE = os.path.join(DATA_DIR, "triplas_imagenet_vqa.csv")
 IMAGE_DIR = DATA_DIR
 IMAGENET_DIR = os.path.join(IMAGE_DIR, "tiny-imagenet-200", "train")
 VQA_DIR = os.path.join(IMAGE_DIR, "vqa", "mscoco")
-BATCH_SIZE = 256
+BATCH_SIZE = 384 
 TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_4.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
@@ -135,7 +135,7 @@ with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
     logger.debug( "Carregando pares de imagens...")
 
     synsets = os.listdir(IMAGENET_DIR)
-    synsets = synsets[0:1]
+    synsets = synsets[0:25]
     vqa_filenames_list = load_vqa_filenames_list(os.path.join(DATA_DIR, "mscoco_cats.csv"))
 
     logger.debug("quantidade de synsets %s", len(synsets))
