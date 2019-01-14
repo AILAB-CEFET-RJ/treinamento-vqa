@@ -114,11 +114,11 @@ DATA_DIR = os.environ["DATA_DIR"]
 VQA_DIR = os.path.join(DATA_DIR,"vqa")
 IMAGE_DIR = os.path.join(VQA_DIR,"convertidas")
 
-BEST_MODEL_FILENAME = "mobilenet-destilation-1-dot-best.h5"
-FINAL_MODEL_FILENAME = "mobilenet-destilation1-dot-final.h5"
+BEST_MODEL_FILENAME = "mobilenet-destilation-3-dot-best.h5"
+FINAL_MODEL_FILENAME = "mobilenet-destilation-3-dot-final.h5"
 
 #TRIPLES_FILE = os.path.join(DATA_DIR, "triples_train.csv") 
-TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_2.csv") 
+TRIPLES_FILE = os.path.join(DATA_DIR, "vqa", "distilation", "triples_4.csv") 
 
 logger.debug("DATA_DIR %s", DATA_DIR)
 logger.debug("IMAGE_DIR %s", IMAGE_DIR)
@@ -186,7 +186,7 @@ model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accur
 logger.info(" ####### Inicio do treinamento ######")
 
 # Parametrizacao da Rede
-BATCH_SIZE = 128
+BATCH_SIZE = 96
 NUM_EPOCHS = 1 
 BEST_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "mobilenet-distilation", BEST_MODEL_FILENAME)
 FINAL_MODEL_FILE = os.path.join(DATA_DIR, "vqa", "models", "mobilenet-distilation", FINAL_MODEL_FILENAME)
