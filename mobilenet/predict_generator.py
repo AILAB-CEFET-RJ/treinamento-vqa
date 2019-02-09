@@ -126,7 +126,6 @@ logger.debug("IMAGE_DIR %s", IMAGE_DIR)
 logger.debug("IMAGENET_DIR %s", IMAGENET_DIR)
 logger.debug("VQA_DIR %s", VQA_DIR)
 
-
 logger.debug( "Carregando pares de imagens...")
 
 synsets = load_synset_list(os.path.join(DATA_DIR, "synsets_dog_cat.csv"))
