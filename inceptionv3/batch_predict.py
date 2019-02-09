@@ -23,7 +23,7 @@ from util.ts_iterator import threadsafe_iter
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
-                    filename='logs/batch_predict.log',
+                    filename='logs/batch_predict1.log',
                     filemode='w')
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -136,7 +136,8 @@ logger.info("Modelo carregado com sucesso")
 
 logger.debug( "Carregando pares de imagens...")
 
-synsets = load_synset_list(os.path.join(DATA_DIR, "LOC_synset_mapping.txt"))
+#synsets = load_synset_list(os.path.join(DATA_DIR, "LOC_synset_mapping.txt"))
+synsets = load_synset_list(os.path.join(DATA_DIR, "synsets_dog_cat.csv"))
 
 # Apenas os N synsets 
 OFFSET_SYNSET = 0
@@ -193,8 +194,8 @@ for filename in vqa_filenames_list:
     
     #df = pd.DataFrame(similarities, columns=["mscoco", "imagenet", "similarity"])
     df = pd.DataFrame(similarities, columns=["imagenet", "similarity"])
-    df.to_csv(os.path.join(DATA_DIR, "predicoes", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
-    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes" , predict_filename))
+    df.to_csv(os.path.join(DATA_DIR, "predicoes-3", predict_filename), mode='a', header=0, index = 0, encoding="utf-8" )
+    logger.info("salvo em %s", os.path.join(DATA_DIR, "predicoes-3" , predict_filename))
     del image_cache[vqa_file]
     tac() # Marca o tempo de fim da execucao
 
